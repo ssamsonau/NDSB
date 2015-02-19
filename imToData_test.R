@@ -1,24 +1,31 @@
+rm(list=ls())
 rootDataDir <- "E://Temp/NDSB/test/"
 imgDir <- rootDataDir
 
 library(jpeg)
-library('Matrix') 
-numberOfImages <- length(dir(imgDir)[1:50])
-imgMatix_test <- Matrix(0, nrow = numberOfImages, ncol = 2500, sparse = F)
-#ImgMatix <- matrix(0, nrow = length(typeNames), ncol = 2500)
+#library('Matrix') 
+
+imgNames <- grep("r50_", dir(imgDir), value=TRUE)
+numberOfImages <- length(imgNames)
+
+# matrix will be filled by columns - this is significantly faster (vs by rows). 
+#imgMatix_test <- Matrix(0, ncol = numberOfImages, nrow = 2500, sparse = T)
 i <- 1
 
-imgNames <- grep("r50_", dir(imgDir), value=TRUE)[1:numberOfImages]
+library(data.table)
+imgTestDT <- data.table( matrix(0, ncol=0, nrow=2500)  )
+
 for(imgName in imgNames){
-  system.time( img <- readJPEG( paste0(imgDir, imgName) ) )
-  system.time( imgMatix_test[i, ] <- as.vector(img) )
-  i <- i + 1
   cat("file:  ", i, "/",  numberOfImages, "\n")
+  img <- readJPEG( paste0(imgDir, imgName) ) 
+  #imgMatix_test[ , i] <- as.vector(img) 
+  imgTestDT[ , eval(imgName):= as.vector(img)] 
+  #setnames(imgTestDT, paste0("V", i), imgName)
+  i <- i + 1
 }
+imgTestDT[, V1=NULL]
+print(object.size(imgTestDT), units="Mb")  
 
-print(object.size(imgMatix_test), units="Mb")  
-
-save(imgMatix_test, file="imgMatix_test_dense.Rdata")
-
-imgNames_original <- sapply(strsplit(imgNames, "_"), "[", 2) 
-save(imgNames_original, file="imgNames_test.Rdata")
+# transpose before writing to file. 
+imgTestDT <- t(imgTestDT)
+save(imgTestDT, file="imgTestDT.Rdata")

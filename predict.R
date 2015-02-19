@@ -8,12 +8,12 @@ best_model <- h2o.loadModel(localH2O, path="./best_model.Rdata")
 best_model_genType <- h2o.loadModel(localH2O, path="best_model_genType.Rdata")
 
 #load test data
-load("imgMatix_test_dense.Rdata")
 library(data.table)
-imgDTtest <- data.table( as.matrix(imgMatix_test) )
+load("imgTestDT.Rdata")
+#imgTestDT <- data.table( as.matrix(imgMatix_test) )
 
 #load  test data to h2o
-testDT.h2o <- as.h2o(client = localH2O, imgDTtest, header=T)
+testDT.h2o <- as.h2o(client = localH2O, imgTestDT, header=T)
 print(str(testDT.h2o))
 
 #make prediction of genType
@@ -21,7 +21,7 @@ predicted_genType <- h2o.predict(best_model_genType, testDT.h2o)
 predicted_genType$predict
 
 #add predicted genType as a coloumn to test data
-cbind(testDT.h2o, predicted_genType$predict)
+testDT.h2o <- cbind(testDT.h2o, predicted_genType$predict)
 
 #make prediction of output
 predicted_output <- h2o.predict(best_model, testDT.h2o)
@@ -40,7 +40,7 @@ missing <- submissionVect[ ! submissionVect %in% names(resultsDT) ]
 
 resultsDT[, eval(missing):=0]
 
-load("imgNames_test.Rdata")
+imgNames_original <- sapply(strsplit(rownames(imgTestDT), "_"), "[", 2)
 resultsDT[, image:=imgNames_original]
 new_order <- match(submissionVect, names(resultsDT))
 setcolorder(resultsDT, new_order)
