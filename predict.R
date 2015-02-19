@@ -1,4 +1,3 @@
-
 # init h2o
 library(h2o)
 localH2O = h2o.init(nthreads=-1)
@@ -9,8 +8,9 @@ best_model_genType <- h2o.loadModel(localH2O, path="best_model_genType.Rdata")
 
 #load test data
 library(data.table)
-load("imgTestDT.Rdata")
-#imgTestDT <- data.table( as.matrix(imgMatix_test) )
+imgTestDT <- fread(unzip("imgTestDT.zip"))
+setnames(imgTestDT, 1, "filename")
+#load("imgTestDT.Rdata")
 
 #load  test data to h2o
 testDT.h2o <- as.h2o(client = localH2O, imgTestDT, header=T)
@@ -40,7 +40,7 @@ missing <- submissionVect[ ! submissionVect %in% names(resultsDT) ]
 
 resultsDT[, eval(missing):=0]
 
-imgNames_original <- sapply(strsplit(rownames(imgTestDT), "_"), "[", 2)
+imgNames_original <- sapply(strsplit(imgTestDT$filename, "_"), "[", 2)
 resultsDT[, image:=imgNames_original]
 new_order <- match(submissionVect, names(resultsDT))
 setcolorder(resultsDT, new_order)

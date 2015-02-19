@@ -1,25 +1,20 @@
 rm(list=ls())
 rootDataDir <- "E://Temp/NDSB/train/"
 folderNames <- dir(rootDataDir) 
-#folderNames <- grep("unknown", folderNames, invert=TRUE, value=TRUE)
 
-typeNames <- c()
+#count all files
+numberOfImages <- 0
 for(folderName in folderNames){
-  dirContent <- dir(paste0(rootDataDir, folderName))
-  typeNames <- c(typeNames, rep(folderName, length(dirContent)))
+  numberOfImages <- numberOfImages + length(grep("r50_", dir(paste0(rootDataDir, folderName))))
 }
-output <- factor(typeNames)
-numberOfImages <- length(typeNames)
 
 library(jpeg)
-#library('Matrix') 
-
+# Data Table will be filled by columns - this is significantly faster (vs by rows). 
+# Data Talbe is faster than matrix from Matrix package
 library(data.table)
 imgTrainDT <- data.table( matrix(0, ncol=1, nrow=2500)  )
-#imgMatix <- Matrix(0, nrow = length(typeNames), ncol = 2500, sparse = TRUE)
-#ImgMatix <- matrix(0, nrow = length(typeNames), ncol = 2500)
-i <- 1
 
+i <- 1
 for(folderName in folderNames){
   imgDir <- paste0(rootDataDir, folderName, "/")
   cat("folder: ", imgDir, "\n")    
@@ -27,9 +22,7 @@ for(folderName in folderNames){
   for(imgName in imgNames){
     cat("file:  ", i, "/",  numberOfImages, "\n")
     img <- readJPEG( paste0(imgDir, imgName) ) 
-    #imgMatix_test[ , i] <- as.vector(img) 
-    imgTrainDT[ , eval(folderName):= as.vector(img)] 
-    #setnames(imgTrainDT, paste0("V", i), folderName)
+    imgTrainDT[ , paste0(folderName, "&", imgName):= as.vector(img)] 
     i <- i + 1    
   }
 } 
@@ -39,6 +32,6 @@ print(object.size(imgTrainDT), units="Mb")
 # transpose before writing to file. 
 imgTrainDT <- t(imgTrainDT)
 
-save(imgTrainDT, file="imgTrainDT.Rdata")
+#save(imgTrainDT, file="imgTrainDT.Rdata")
 #save(output, file="output.Rdata")
-  
+write.csv(imgTrainDT, file="imgTrainDT.csv")  

@@ -1,19 +1,22 @@
 # load prepared data
-load("imgTrainDT.Rdata")
+library(data.table)
+#imgTrainDT <- fread("imgTrainDT.csv")
+imgTrainDT <- fread(unzip("imgTrainDT.zip"))
+setnames(imgTrainDT, 1, "path")
+#load("imgTrainDT.Rdata")
 #load("output.Rdata")
 
 ### SUBSET data for small computer
-subsetSize = 1000 # -1 for no limit
+subsetSize = -1 # -1 for no limit
 #-------------------------
 
-library(data.table)
-#imgDT <- data.table( as.matrix(imgMatix) )
-#save(imgDT, file="imgMatix_dense.Rdata")
+imgTrainDT[, output:=
+             sapply( strsplit( imgTrainDT$path, "&"), "[", 1) ]
 
-imgTrainDT[, output:=rownames(imgTrainDT)]
+imgTrainDT[, genType:=as.factor(
+  sapply( strsplit(as.character(imgTrainDT$output), "_") , "[", 1))]
 
-temp <- strsplit(as.character(imgTrainDT$output), "_")
-imgTrainDT[, genType:=as.factor(sapply(temp, "[", 1))]
+imgTrainDT[, output:=factor(output)]
 
 library(h2o)
 localH2O = h2o.init(nthreads=-1)
@@ -44,7 +47,7 @@ grid_search_genType <- h2o.deeplearning(x = grep("V", names(trainDT.h2o), value=
                                 data = trainDT.h2o,
                                 validation = valid_hex,
                                 #nfolds = 5,
-                                hidden=list(c(50, 50)),
+                                hidden=list(c(10, 10)),
                                 epochs = 60,
                                 activation=c("Tanh", "Rectifier"),
                                 classification = TRUE,
@@ -78,7 +81,7 @@ grid_search <- h2o.deeplearning(x = c( grep("V", names(trainDT.h2o), value=T), "
                                 data = trainDT.h2o,
                                 validation = valid_hex,
                                 #nfolds = 5,
-                                hidden=list(c(50, 50)),
+                                hidden=list(c(10, 10)),
                                 epochs = 60,
                                 activation=c("Tanh", "Rectifier"),
                                 classification = TRUE,

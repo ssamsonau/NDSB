@@ -1,4 +1,4 @@
-packages.to.install <- c("data.table", "h2o", "Matrix")
+packages.to.install <- c("data.table", "h2o")
 
 install.packages(packages.to.install)
 
