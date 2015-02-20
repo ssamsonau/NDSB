@@ -47,24 +47,26 @@ train_hex_split <- h2o.splitFrame(trainDT.h2o, ratios = 0.8, shuffle = TRUE)
 
 "train a model for general type"
 
+#http://0xdata.com/docs/master/model/deep-learning/
 ## Train a 50-node, three-hidden-layer Deep Neural Networks for 100 epochs
 grid_search_genType <- h2o.deeplearning(x = grep("V", names(trainDT.h2o), value=T),
                                 y = "genType",
                                 data = train_hex_split[[1]],
                                 validation = train_hex_split[[2]],
                                 #nfolds = 5,
-                                hidden=list(c(20, 20, 20)),
-                                epochs = 60,
-                                activation=c("Tanh", "Rectifier"),
+                                
+                                hidden=list(c(40, 40, 40)),
+                                epochs = 100,
+                                activation=c("Rectifier"),
                                 classification = TRUE,
                                 balance_classes = FALSE, 
                                 adaptive_rate = TRUE,
-                                epsilon= c(1e-4, 1e-6, 1e-8, 1e-10),
-                                rho = c(0.9, 0.95, 0.99),
+                                rho = c(0.92, 0.98),
+                                epsilon= c(1e-8, 1e-6),
                                 #l2=c(1e-5, 1e-4),
                                 #l1=c(0, 1e-5),
-                                fast_mode=TRUE
-)
+                                fast_mode=TRUE)
+
 
 best_model_genType <- grid_search_genType@model[[1]]
 best_params_genType <- best_model_genType@model$params
@@ -87,18 +89,18 @@ grid_search <- h2o.deeplearning(x = c( grep("V", names(trainDT.h2o), value=T), "
                                 data = train_hex_split[[1]],
                                 validation = train_hex_split[[2]],
                                 #nfolds = 5,
-                                hidden=list(c(20, 20, 20)),
-                                epochs = 60,
-                                activation=c("Tanh", "Rectifier"),
+                                
+                                hidden=list(c(40, 40, 40)),
+                                epochs = 100,
+                                activation=c("Rectifier"),
                                 classification = TRUE,
                                 balance_classes = FALSE, 
                                 adaptive_rate = TRUE,
-                                epsilon= c(1e-4, 1e-6, 1e-8, 1e-10),
-                                rho = c(0.9, 0.95, 0.99),
+                                rho = c(0.92, 0.98),
+                                epsilon= c(1e-8, 1e-6),
                                 #l2=c(1e-5, 1e-4),
                                 #l1=c(0, 1e-5),
-                                fast_mode=TRUE
-)
+                                fast_mode=TRUE)
 
 
 best_model <- grid_search@model[[1]]
