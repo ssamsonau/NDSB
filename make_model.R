@@ -1,13 +1,17 @@
 # load prepared data
 library(data.table)
-#imgTrainDT <- fread("imgTrainDT.csv")
 imgTrainDT <- fread(unzip("imgTrainDT.zip"))
+#imgTrainDT <- fread("imgFeaturesTrainDT.csv")
 setnames(imgTrainDT, 1, "path")
 #load("imgTrainDT.Rdata")
 #load("output.Rdata")
 
+#scale.f <-  function(dt){ as.vector(scale(dt)) }
+imgTrainDT[, names(imgTrainDT)[2:8]:= lapply(.SD, scale), .SDcols = 2:8 ]
+
+
 ### SUBSET data for small computer
-subsetSize = -1 # -1 for no limit
+subsetSize = -1 
 #-------------------------
 
 imgTrainDT[, output:=
@@ -47,7 +51,7 @@ grid_search_genType <- h2o.deeplearning(x = grep("V", names(trainDT.h2o), value=
                                 data = trainDT.h2o,
                                 validation = valid_hex,
                                 #nfolds = 5,
-                                hidden=list(c(10, 10)),
+                                hidden=list(c(20, 20, 20)),
                                 epochs = 60,
                                 activation=c("Tanh", "Rectifier"),
                                 classification = TRUE,
@@ -70,7 +74,7 @@ print(best_model_genType)
 
 print("error on test set _genType")
 predicted_genType <- h2o.predict(best_model_genType, test_hex)
-h2o.confusionMatrix(predicted_genType$predict, test_hex$genType)
+h2o.confusionMatrix(predicted_genType$predict, test_hex$genType)["Totals", "Error"]
 
 ###------------------------------------------
 "train a model for output"
@@ -81,7 +85,7 @@ grid_search <- h2o.deeplearning(x = c( grep("V", names(trainDT.h2o), value=T), "
                                 data = trainDT.h2o,
                                 validation = valid_hex,
                                 #nfolds = 5,
-                                hidden=list(c(10, 10)),
+                                hidden=list(c(20, 20, 20)),
                                 epochs = 60,
                                 activation=c("Tanh", "Rectifier"),
                                 classification = TRUE,
@@ -106,4 +110,4 @@ print(best_model)
 
 print("error on test set")
 predicted <- h2o.predict(best_model, test_hex)
-tail( h2o.confusionMatrix(predicted$predict, test_hex$output) )
+h2o.confusionMatrix(predicted$predict, test_hex$output)["Totals", "Error"]
