@@ -3,11 +3,21 @@ library(data.table)
 imgTrainDT <- fread(unzip("imgTrainDT.zip"))
 #imgTrainDT <- fread("imgFeaturesTrainDT.csv")
 setnames(imgTrainDT, 1, "path")
-#load("imgTrainDT.Rdata")
-#load("output.Rdata")
+pathCol <- imgTrainDT$path
+imgTrainDT[, path:=NULL]
 
-#scale.f <-  function(dt){ as.vector(scale(dt)) }
-imgTrainDT[, names(imgTrainDT)[2:8]:= lapply(.SD, scale), .SDcols = 2:8 ]
+#preprocess with caret
+library(caret)
+#nzv <- nearZeroVar(imgTrainDT)
+#imgTrainDT[, eval(nzv):=NULL]
+
+preProcValues <- preProcess(imgTrainDT, 
+                            method = c("center", "scale"))
+imgTrainDT[, names(imgTrainDT):=predict(preProcValues, imgTrainDT) ]
+
+#descrCor <- cor(imgTrainDT)
+#highlyCorDescr <- findCorrelation(descrCor, cutoff = .8)
+#imgTrainDT[, highlyCorDescr:=NULL]
 
 
 ### SUBSET data for small computer
@@ -15,7 +25,7 @@ subsetSize = -1
 #-------------------------
 
 imgTrainDT[, output:=
-             sapply( strsplit( imgTrainDT$path, "&"), "[", 1) ]
+             sapply( strsplit( pathCol, "&"), "[", 1) ]
 
 imgTrainDT[, genType:=as.factor(
   sapply( strsplit(as.character(imgTrainDT$output), "_") , "[", 1))]
@@ -55,7 +65,7 @@ grid_search_genType <- h2o.deeplearning(x = grep("V", names(trainDT.h2o), value=
                                 validation = train_hex_split[[2]],
                                 #nfolds = 5,
                                 
-                                hidden=list(c(40, 40, 40)),
+                                hidden=list(c(40, 40)),
                                 epochs = 100,
                                 activation=c("Rectifier"),
                                 classification = TRUE,
@@ -90,7 +100,7 @@ grid_search <- h2o.deeplearning(x = c( grep("V", names(trainDT.h2o), value=T), "
                                 validation = train_hex_split[[2]],
                                 #nfolds = 5,
                                 
-                                hidden=list(c(40, 40, 40)),
+                                hidden=list(c(40, 40)),
                                 epochs = 100,
                                 activation=c("Rectifier"),
                                 classification = TRUE,
