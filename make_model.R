@@ -4,16 +4,17 @@ imgTrainDT <- fread(unzip("imgTrainDT.zip"))
 #imgTrainDT <- fread("imgFeaturesTrainDT.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
-imgTrainDT[, path:=NULL]
+#imgTrainDT[, path:=NULL]
 
 #preprocess with caret
 library(caret)
 #nzv <- nearZeroVar(imgTrainDT)
 #imgTrainDT[, eval(nzv):=NULL]
 
-preProcValues <- preProcess(imgTrainDT, 
+col.to.scale <- names(imgTrainDT)[2:(20*7+1)]
+preProcValues <- preProcess(imgTrainDT[, .SD, .SDcols = col.to.scale ], 
                             method = c("center", "scale"))
-imgTrainDT[, names(imgTrainDT):=predict(preProcValues, imgTrainDT) ]
+imgTrainDT[, eval(col.to.scale):=predict(preProcValues, imgTrainDT[, .SD, .SDcols=col.to.scale]) ]
 
 #descrCor <- cor(imgTrainDT)
 #highlyCorDescr <- findCorrelation(descrCor, cutoff = .8)
@@ -120,6 +121,22 @@ best_params <- best_model@model$params
 h2o.saveModel(best_model, dir=".", name="best_model.Rdata", force = T)
 
 print(best_model)
+
+
+#make prediction of output
+valDT <- data.table( as.matrix(train_hex_split[[2]]) )
+
+predicted_output <- h2o.predict(best_model, train_hex_split[[2]])
+#predicted_output$predict
+
+#form a submission data table
+resultsDT <- data.table(as.matrix(predicted_output))
+resultsDT[, predict:=NULL]
+
+source("mcLogLoss.R")
+mcLogLoss(valDT$output, resultsDT)
+
+
 #print(best_params)
 
 #print("error on test set")
