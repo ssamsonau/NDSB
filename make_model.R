@@ -4,14 +4,14 @@ imgTrainDT <- fread(unzip("imgTrainDT.zip"))
 #imgTrainDT <- fread("imgFeaturesTrainDT.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
-#imgTrainDT[, path:=NULL]
+imgTrainDT[, path:=NULL]
 
 #preprocess with caret
 library(caret)
-#nzv <- nearZeroVar(imgTrainDT)
-#imgTrainDT[, eval(nzv):=NULL]
+nzv <- nearZeroVar(imgTrainDT)
+imgTrainDT[, eval(nzv):=NULL]
 
-col.to.scale <- names(imgTrainDT)[2:(20*7+1)]
+col.to.scale <- names(imgTrainDT)
 preProcValues <- preProcess(imgTrainDT[, .SD, .SDcols = col.to.scale ], 
                             method = c("center", "scale"))
 imgTrainDT[, eval(col.to.scale):=predict(preProcValues, imgTrainDT[, .SD, .SDcols=col.to.scale]) ]

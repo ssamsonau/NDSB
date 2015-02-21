@@ -13,7 +13,7 @@ mcLogLoss <- function(actual.c, predicted.prob.DT){
     j <- which(names(predicted.prob.DT) == actual.c[i])
     prob_ij <- as.numeric( predicted.prob.DT[i, j, with=F] ) 
     mlogLoss <- mlogLoss + log(prob_ij)
-    cat(i, j, mlogLoss)
+    #cat(i, j, mlogLoss)
   }
   
   numClasses <- nrow(predicted.prob.DT) 

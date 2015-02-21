@@ -2,8 +2,8 @@ rm(list=ls())
 rootDataDir <- "E://Temp/NDSB/train/"
 folderNames <- dir(rootDataDir) 
 
-numOfSlices <- 20 
-sizeIm <- 30
+#numOfSlices <- 20 
+#sizeIm <- 30
 
 ################################
 #count all files
@@ -16,13 +16,16 @@ library(jpeg)
 # Data Table will be filled by columns - this is significantly faster (vs by rows). 
 # Data Talbe is faster than matrix from Matrix package
 library(data.table)
-imgTrainDT <- data.table( matrix(0, ncol=1, nrow=numOfSlices*7+sizeIm^2)  )
+
+#imgTrainDT <- data.table( matrix(0, ncol=1, nrow=numOfSlices*7+sizeIm^2)  )
+imgTrainDT <- data.table( matrix(0, ncol=1, nrow=94)  )
+
 
 library(EBImage)
 source("EBimageFeatureExtraction.R")
 source("EBimageTurnImage.R")
 
-i <- 1
+i <- 1 
 for(folderName in folderNames){
   imgDir <- paste0(rootDataDir, folderName, "/")
   cat("folder: ", imgDir, "\n")    
@@ -31,19 +34,22 @@ for(folderName in folderNames){
     cat("file:  ", i, "/",  numberOfImages, "\n")
     img <- readJPEG( paste0(imgDir, imgName) ) 
       
-    ImFeatures <- getFeatures(img, numOfSlices=numOfSlices)
+    ImFeatures <- getFeatures(img)
     
-    img_r <- turnImage(img = img, sizeIm = sizeIm)
+    #img_r <- turnImage(img = img, sizeIm = sizeIm)
     
-    imgTrainDT[ , paste0(folderName, "&", imgName):= c(ImFeatures, img_r)] 
-
+    #imgTrainDT[ , paste0(folderName, "&", imgName):= c(ImFeatures, img_r)] 
+    imgTrainDT[ , paste0(folderName, "&", imgName):= ImFeatures] 
+    
+    
     # save images for diagnostics
     #diag.path <- paste0("./diagnostics/", folderName)
     #if(! file.exists(diag.path)){dir.create(diag.path)} 
     #writeJPEG(ifelse(img_r, 1, 0), target=paste0(diag.path, "/", imgName), bg="black")
     # end diagnostics
         
-    i <- i + 1    
+    i <- i + 1
+    
   }
 } 
 imgTrainDT[, V1:=NULL]
