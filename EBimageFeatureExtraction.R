@@ -10,47 +10,23 @@ statMatrixValues <- function(img){
   )  
 }  
 
-binImStat <- function(img){
-  NconnectedParts <- max(bwlabel(img))
-  Eccent <- computeFeatures.moment(img)[1, "m.eccentricity"]
-  Shape <-  computeFeatures.shape(img)[1, ] #6
-  distData <- statMatrixValues(distmap(img))  
+binImStatBasic <- function(img_bin){
+  NconnectedParts <- max(bwlabel(img_bin))
+  Eccent <- computeFeatures.moment(img_bin)[1, "m.eccentricity"]
+  Shape <-  computeFeatures.shape(img_bin)[1, ] #6
+  distData <- statMatrixValues(distmap(img_bin))  
   featuresIm <- c(NconnectedParts, Eccent, Shape, distData)
-  
+
   featuresIm
-}  
+} 
 
-
-getFeatures <- function(imgIn){
-  library(EBImage)
-  #display(img)
-  img <- 1-imgIn
-
-  featuresIm <- c()
-  #########################Intensity
-  Intensity <- statMatrixValues(img)
-  featuresIm <- c(featuresIm, Intensity)
-  #mI <- max(img)
-
-  ############################### COnvert to binary
-  #find intensity to convert to binary
-  intensityCutoff <- otsu(img, range = c(0, max(img)), levels = 256)
-   
-  img_bin <- img > intensityCutoff
-  
-  ######################### basic Statistics of binary image
-  featuresIm <- c(featuresIm, binImStat(img_bin) )
-  
+binImStatContours <- function(img_bin){
   ####################### Contors count and curvature characteristics
   imCont <- ocontour(bwlabel(img_bin))
   contCount <- length(imCont)
   
   library(data.table)
   locCurvStatDT <- data.table(matrix(0, ncol=1, nrow=10))
-    
-  #statCurvValues <- function(img){
-   # c(sum(img), mean(img), quantile(img) ) # min, max, and quartiles ->  5 total
-  #}
   
   colNameIt <- 0
   for(cont in imCont){
@@ -67,15 +43,47 @@ getFeatures <- function(imgIn){
   if(ncol(locCurvStatDT) > 1) locCurvStatDT[, "V1":=NULL]
   
   locCurvStatDT <- data.table( t(locCurvStatDT) )
-    
+  
   CurvFeatures <- unlist( lapply(locCurvStatDT, quantile) )
-  featuresIm <- c(featuresIm, contCount, CurvFeatures)    
+  featuresIm <- c(contCount, CurvFeatures)    
+  featuresIm
+}
+
+binImStat <- function(img_bin){
+  featuresIm <- c()
+  ######################### basic Statistics of binary image
+  featuresIm <- c(featuresIm, binImStatBasic(img_bin) )
+  ######################### contours Statistics of binary image
+  #featuresIm <- c(featuresIm, binImStatContours(img_bin) )
   ###################fill holes
   img_filled <- fillHull(bwlabel(img_bin))
-  featuresIm <- c(featuresIm, binImStat(img_filled) )
+  featuresIm <- c(featuresIm, binImStatBasic(img_filled) )
   #display(img_filled)
   #display(img_bin)
+  featuresIm
+}
 
-  
+
+getFeatures <- function(imgIn){
+  library(EBImage)
+  #display(img)
+  img <- 1-imgIn
+
+  featuresIm <- c()
+  #########################Intensity
+  Intensity <- statMatrixValues(img)
+  featuresIm <- c(featuresIm, Intensity)
+  #mI <- max(img)
+
+  ############################### COnvert to binary by 
+  #find intensity to convert to binary
+  intensityCutoff <- otsu(img, range = c(0, 1), levels = 256)
+  img_bin <- img > intensityCutoff
+  featuresIm <- c(featuresIm, binImStat(img_bin))
+  ############################### Convert ot binary by watershed
+  img_w <- watershed(img)
+  img_w_bin <- img_w==1
+  featuresIm <- c(featuresIm, binImStat(img_w_bin))
+    
   featuresIm
 }

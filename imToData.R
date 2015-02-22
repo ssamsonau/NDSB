@@ -18,12 +18,12 @@ library(jpeg)
 library(data.table)
 
 #imgTrainDT <- data.table( matrix(0, ncol=1, nrow=numOfSlices*7+sizeIm^2)  )
-imgTrainDT <- data.table( matrix(0, ncol=1, nrow=94)  )
+imgTrainDT <- data.table( matrix(0, ncol=1, nrow=77)  )
 
 
 library(EBImage)
 source("EBimageFeatureExtraction.R")
-source("EBimageTurnImage.R")
+#source("EBimageTurnImage.R")
 
 i <- 1 
 for(folderName in folderNames){
@@ -58,6 +58,6 @@ print(object.size(imgTrainDT), units="Mb")
 # transpose before writing to file. 
 imgTrainDT <- t(imgTrainDT) 
 
-write.csv(imgTrainDT, file="imgTrainDT.csv")  
-system2("C://Program Files/7-Zip/7z.exe", "a -tzip imgTrainDT.zip imgTrainDT.csv")
+write.csv(imgTrainDT, file="imgTrainDT_77.csv")  
+system2("C://Program Files/7-Zip/7z.exe", "a -tzip imgTrainDT_77.zip imgTrainDT_77.csv")
 
