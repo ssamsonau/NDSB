@@ -18,9 +18,9 @@ preProcValues <- preProcess(imgTrainDT[, .SD, .SDcols = col.to.scale ],
                             method = c("center", "scale"))
 imgTrainDT[, eval(col.to.scale):=predict(preProcValues, imgTrainDT[, .SD, .SDcols=col.to.scale]) ]
 
-#descrCor <- cor(imgTrainDT)
-#highlyCorDescr <- findCorrelation(descrCor, cutoff = .8)
-#imgTrainDT[, eval(highlyCorDescr):=NULL]
+descrCor <- cor(imgTrainDT)
+highlyCorDescr <- findCorrelation(descrCor, cutoff = .8)
+imgTrainDT[, eval(highlyCorDescr):=NULL]
 
 
 ### SUBSET data for small computer
@@ -60,7 +60,7 @@ grid_search <- h2o.deeplearning(x = c( grep("V", names(trainDT.h2o), value=T)),
                                 validation = train_hex_split[[2]],
                                 #nfolds = 5,
                                 
-                                hidden=list(c(40, 40)),
+                                hidden=list(c(1000, 1000, 1000)),
                                 epochs = 100,
                                 activation=c("Rectifier"),
                                 classification = TRUE,
