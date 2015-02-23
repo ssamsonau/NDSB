@@ -18,7 +18,7 @@ library(jpeg)
 library(data.table)
 
 #imgTrainDT <- data.table( matrix(0, ncol=1, nrow=numOfSlices*7+sizeIm^2)  )
-imgTrainDT <- data.table( matrix(0, ncol=1, nrow=77)  )
+imgTrainDT <- data.table( matrix(0, ncol=1, nrow=128)  )
 
 
 library(EBImage)
@@ -58,6 +58,6 @@ print(object.size(imgTrainDT), units="Mb")
 # transpose before writing to file. 
 imgTrainDT <- t(imgTrainDT) 
 
-write.csv(imgTrainDT, file="imgTrainDT_77.csv")  
-system2("C://Program Files/7-Zip/7z.exe", "a -tzip imgTrainDT_77.zip imgTrainDT_77.csv")
+write.csv(imgTrainDT, file="imgTrainDT_128.csv")  
+system2("C://Program Files/7-Zip/7z.exe", "a -tzip imgTrainDT_128.zip imgTrainDT_128.csv")
 

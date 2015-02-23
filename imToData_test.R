@@ -14,7 +14,7 @@ library(jpeg)
 # Data Talbe is faster than matrix from Matrix package
 library(data.table)
 
-imgTestDT <- data.table( matrix(0, ncol=1, nrow=77)  )
+imgTestDT <- data.table( matrix(0, ncol=1, nrow=128)  )
 
 library(EBImage)
 source("EBimageFeatureExtraction.R")
@@ -51,6 +51,6 @@ print(object.size(imgTestDT), units="Mb")
 # transpose before writing to file. 
 imgTestDT <- t(imgTestDT) 
 
-write.csv(imgTestDT, file="imgTestDT.csv")  
-system2("C://Program Files/7-Zip/7z.exe", "a -tzip imgTestDT_77.zip imgTestDT_77.csv")
+write.csv(imgTestDT, file="imgTestDT_128.csv")  
+system2("C://Program Files/7-Zip/7z.exe", "a -tzip imgTestDT_128.zip imgTestDT_128.csv")
 

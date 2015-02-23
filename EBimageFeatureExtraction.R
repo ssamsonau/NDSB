@@ -80,6 +80,7 @@ getFeatures <- function(imgIn){
   intensityCutoff <- otsu(img, range = c(0, 1), levels = 256)
   img_bin <- img > intensityCutoff
   featuresIm <- c(featuresIm, binImStat(img_bin))
+  featuresIm <- c(featuresIm, binImStatContours(img_bin) )
   ############################### Convert ot binary by watershed
   img_w <- watershed(img)
   img_w_bin <- img_w==1
