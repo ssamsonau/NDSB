@@ -4,24 +4,49 @@ localH2O = h2o.init(nthreads=-1)
 
 #load models
 best_model <- h2o.loadModel(localH2O, path="./best_model.Rdata")
-best_model_genType <- h2o.loadModel(localH2O, path="best_model_genType.Rdata")
 
-#load test data
+#load train And test data
 library(data.table)
-imgTestDT <- fread(unzip("imgTestDT.zip"))
+imgTrainDT <- fread(unzip("imgTrainDT_128.zip"))
+setnames(imgTrainDT, 1, "path")
+pathCol <- imgTrainDT$path
+imgTrainDT[, path:=NULL]
+
+
+imgTestDT <- fread(unzip("imgTestDT_128.zip"))
 setnames(imgTestDT, 1, "filename")
-#load("imgTestDT.Rdata")
+fileNameCol <- imgTestDT$filename
+imgTestDT[, filename:=NULL]
+
+#preprocess with caret
+#--------------------------------------------------
+library(caret)
+nzv <- nearZeroVar(imgTrainDT)
+imgTrainDT[, eval(nzv):=NULL]
+imgTestDT[, eval(nzv):=NULL]
+
+col.to.scale <- names(imgTrainDT)
+preProcValues <- preProcess(imgTrainDT[, .SD, .SDcols = col.to.scale ], 
+                            method = c("center", "scale"))
+imgTrainDT[, eval(col.to.scale):=predict(preProcValues, imgTrainDT[, .SD, .SDcols=col.to.scale]) ]
+imgTestDT[, eval(col.to.scale):=predict(preProcValues, imgTestDT[, .SD, .SDcols=col.to.scale]) ]
+
+
+descrCor <- cor(imgTrainDT)
+highlyCorDescr <- findCorrelation(descrCor, cutoff = .99)
+imgTrainDT[, eval(highlyCorDescr):=NULL]
+imgTestDT[, eval(highlyCorDescr):=NULL]
+
+pca_trans <- preProcess(imgTrainDT, method  = "pca", thresh=0.95)
+imgTestDT <- predict(pca_trans, imgTestDT)
+
+imgTestDT <- data.table(imgTestDT)
+
+
 
 #load  test data to h2o
 testDT.h2o <- as.h2o(client = localH2O, imgTestDT, header=T)
 print(str(testDT.h2o))
-
-#make prediction of genType
-predicted_genType <- h2o.predict(best_model_genType, testDT.h2o)
-predicted_genType$predict
-
-#add predicted genType as a coloumn to test data
-testDT.h2o <- cbind(testDT.h2o, predicted_genType$predict)
 
 #make prediction of output
 predicted_output <- h2o.predict(best_model, testDT.h2o)
@@ -40,8 +65,7 @@ missing <- submissionVect[ ! submissionVect %in% names(resultsDT) ]
 
 resultsDT[, eval(missing):=0]
 
-imgNames_original <- sapply(strsplit(imgTestDT$filename, "_"), "[", 2)
-resultsDT[, image:=imgNames_original]
+resultsDT[, image:=fileNameCol]
 new_order <- match(submissionVect, names(resultsDT))
 setcolorder(resultsDT, new_order)
 

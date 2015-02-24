@@ -18,13 +18,18 @@ preProcValues <- preProcess(imgTrainDT[, .SD, .SDcols = col.to.scale ],
                             method = c("center", "scale"))
 imgTrainDT[, eval(col.to.scale):=predict(preProcValues, imgTrainDT[, .SD, .SDcols=col.to.scale]) ]
 
+
 descrCor <- cor(imgTrainDT)
-highlyCorDescr <- findCorrelation(descrCor, cutoff = .9)
+highlyCorDescr <- findCorrelation(descrCor, cutoff = .99)
 imgTrainDT[, eval(highlyCorDescr):=NULL]
 
+pca_trans <- preProcess(imgTrainDT, method  = "pca", thresh=0.95)
+imgTrainDT <- predict(pca_trans, imgTrainDT)
+
+imgTrainDT <- data.table(imgTrainDT)
 
 ### SUBSET data for small computer
-subsetSize = -1 
+subsetSize <- -1 
 #--------------------------------------------------
 
 imgTrainDT[, output:=
@@ -55,22 +60,22 @@ print(str(trainDT.h2o[, (Ncols-10):Ncols]))
 #train_hex_split <- h2o.splitFrame(trainDT.h2o, ratios = 0.8, shuffle = TRUE)
 
 #http://0xdata.com/docs/master/model/deep-learning/
-grid_search <- h2o.deeplearning(x = c( grep("V", names(trainDT.h2o), value=T)),
+grid_search <- h2o.deeplearning(x = c( grep("PC", names(trainDT.h2o), value=T)),
                                 y = "output",
                                 data = trainDT.h2o, #train_hex_split[[1]],
                                 #validation = train_hex_split[[2]],
                                 nfolds = 4,
                                 
-                                hidden=list(c(1000, 1000, 1000)),
+                                hidden=list(c(100, 100, 100)),
                                 epochs = 100,
                                 activation=c("Rectifier"),
                                 classification = TRUE,
-                                balance_classes = FALSE, 
+                                balance_classes = c(FALSE, TRUE), 
                                 adaptive_rate = TRUE,
                                 rho = c(0.92, 0.98),
                                 epsilon= c(1e-8, 1e-6),
                                 #l2=c(1e-5, 1e-3, 1e-2, 1),
-                                l1=c(0, 1e-5, 1e-4, 1e-3, 1e-2, 1),
+                                l1=c(0, 1e-5, 1e-3, 1),
                                 fast_mode=TRUE)
 
 
