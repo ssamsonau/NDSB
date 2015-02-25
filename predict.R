@@ -72,3 +72,5 @@ setcolorder(resultsDT, new_order)
 write.csv(resultsDT, file="to_be_submitted.csv", quote=F, row.names=F )
 
 system2("C://cygwin64/bin/sed.exe", " -i 's/shrimp.like/shrimp-like/g' to_be_submitted.csv")
+
+system2("C://Program Files/7-Zip/7z.exe", "a -tzip to_be_submitted.zip to_be_submitted.csv")

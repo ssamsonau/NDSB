@@ -42,6 +42,8 @@ imgTrainDT[, output:=factor(output)]
 
 library(h2o)
 localH2O = h2o.init(nthreads=-1)
+#clean h2o if anything left
+#h2o.rm(localH2O, grep(pattern = "Last.value", x = h2o.ls(localH2O)$Key, value = TRUE))
 
 #subsetting the data
 if(subsetSize != -1){
@@ -66,14 +68,14 @@ grid_search <- h2o.deeplearning(x = c( grep("PC", names(trainDT.h2o), value=T)),
                                 validation = train_hex_split[[2]],
                                 #nfolds = 4,
                                 
-                                hidden=list(c(1000, 1000, 1000)),
+                                hidden=list(c(10000, 10000, 10000)),
                                 epochs = 100,
                                 activation=c("Rectifier"),
                                 classification = TRUE,
                                 balance_classes = FALSE, 
                                 adaptive_rate = TRUE,
-                                rho = 0.98, #c(0.92, 0.98),
-                                epsilon= 1e-8, #c(1e-8, 1e-6),
+                                #rho = 0.98, #c(0.92, 0.98),
+                                #epsilon= 1e-8, #c(1e-8, 1e-6),
                                 #l2=c(1e-5, 1e-3, 1e-2, 1),
                                 l1=c(0, 1e-5, 1e-3, 1),
                                 fast_mode=TRUE)
@@ -106,3 +108,8 @@ print( mcLogLoss(valDT$output, resultsDT))
 #print("error on test set")
 #predicted <- h2o.predict(best_model, test_hex)
 #h2o.confusionMatrix(predicted$predict, test_hex$output)["Totals", "Error"]
+
+sink("out.txt")
+print(best_model)
+print(best_params)
+sink()
