@@ -8,6 +8,19 @@ setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
+imgTestDT <- fread(unzip("imgTestDT_128.zip"))
+setnames(imgTestDT, 1, "filename")
+imgTestDT[, filename:=NULL]
+
+#find variables wich have NA in train or test
+col.with.na.train <- names(imgTrainDT)[ sapply(imgTrainDT, anyNA ) | 
+                                          sapply(lapply(imgTrainDT, is.infinite), sum)]
+col.with.na.test <- names(imgTestDT)[sapply(imgTestDT, anyNA ) | 
+                                       sapply(lapply(imgTestDT, is.infinite), sum)]
+col.with.na <- unique(c(col.with.na.test, col.with.na.train))
+if(length(col.with.na) > 0) imgTrainDT[, eval(col.with.na):=NULL]
+
+
 #preprocess with caret
 #--------------------------------------------------
 library(caret)
@@ -29,76 +42,58 @@ imgTrainDT[, eval(highlyCorDescr):=NULL]
 
 #--------------------------------------------------
 
-imgTrainDT[, output:=
+imgTrainDT[, .outcome:=
              sapply( strsplit( pathCol, "&"), "[", 1) ]
 
 #imgTrainDT[, genType:=as.factor(
-#  sapply( strsplit(as.character(imgTrainDT$output), "_") , "[", 1))]
+#  sapply( strsplit(as.character(imgTrainDT$outcome), "_") , "[", 1))]
 
-imgTrainDT[, output:=factor(output)]
+imgTrainDT[grep("shrimp-like_other", .outcome), .outcome:="shrimp_like_other"]
+imgTrainDT[, .outcome:=factor(.outcome)]
 
 ##-------------------------------------------------------
-#"train a model for output"
+#"train a model for outcome"
 set.seed(3456)
 
 fitControl <- trainControl(
   method = "cv",
   number = 5, 
-  verboseIter=T, 
-  classProbs=T, 
-  summaryFunction="Kappa")
+  verboseIter=T,
+  classProbs=T)
 
-library(doParallel)
-cl <- makeCluster(detectCores())
-registerDoParallel(cl)
+#parallel in Windows
+library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
+#parallel in Unix
+#require('doMC');  registerDoMC()
 
-svmLinearFit <- train(output ~ ., data = imgTrainDT,
-                 method = "svmLinear",
-                 trControl = fitControl,
-                 ## This last option is actually one
-                 ## for gbm() that passes through
-                 verbose = FALSE)
-stopCluster(cl)
+rfFit <- train(.outcome ~ ., data = imgTrainDT,
+               method = "rf",
+               ntree=1500,
+               trControl = fitControl,
+               verbose = T, 
+               metric="Kappa")
+
+print(rfFit)
+#stopCluster(cl)
 #system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
 
-svmLinearFit
+save(rfFit, file="model_rf.Rdata")
 
 
-
-best_model <- grid_search@model[[1]]
-best_params <- best_model@model$params
-
-h2o.saveModel(best_model, dir=".", name="best_model.Rdata", force = T)
-
-print(best_model)
-
-print(best_params)
-
-
-#make prediction of output
-#predicted_output <- h2o.predict(best_model, train_hex_split[[2]])
-predicted_output <- h2o.predict(best_model, trainDT.h2o)
-
-#form a submission data table
-resultsDT <- data.table(as.matrix(predicted_output))
-#resultsDT[, predict:=NULL]
-
+predicted <- predict(rfFit, newdata=imgTrainDT, type="prob")
+resultsDT <- data.table(predicted)
 source("mcLogLoss.R")
-#valDT <- data.table( as.matrix(train_hex_split[[2]]) )
-valDT <- data.table( as.matrix(trainDT.h2o) )
-
-print( mcLogLoss(valDT$output, resultsDT))
+print( mcLogLoss(imgTrainDT$.outcome, resultsDT))
 
 #print("error on test set")
 #predicted <- h2o.predict(best_model, test_hex)
-#h2o.confusionMatrix(predicted$predict, test_hex$output)["Totals", "Error"]
+#h2o.confusionMatrix(predicted$predict, test_hex$outcome)["Totals", "Error"]
 
 t2 <- Sys.time()
 print(t2-t1)
 
-sink("out.txt")
-print(best_model)
-print(best_params)
+sink("log.txt")
+print(rfFit)
 print(t2-t1)
 sink()
 

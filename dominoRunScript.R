@@ -1,4 +1,4 @@
-packages.to.load <- c("data.table", "h2o")
+packages.to.load <- c("data.table", "caret")
 
 for(p in packages.to.load){
   if(! p %in% installed.packages()){
