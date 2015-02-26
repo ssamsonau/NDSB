@@ -27,10 +27,6 @@ imgTrainDT[, eval(highlyCorDescr):=NULL]
 #pca_trans <- preProcess(imgTrainDT, method  = "pca", thresh=0.99)
 #imgTrainDT <- predict(pca_trans, imgTrainDT)
 
-#imgTrainDT <- data.table(imgTrainDT)
-
-### SUBSET data for small computer
-subsetSize <- -1 
 #--------------------------------------------------
 
 imgTrainDT[, output:=
@@ -41,45 +37,32 @@ imgTrainDT[, output:=
 
 imgTrainDT[, output:=factor(output)]
 
-library(h2o)
-localH2O = h2o.init(nthreads=-1)
-#clean h2o if anything left
-#h2o.rm(localH2O, grep(pattern = "Last.value", x = h2o.ls(localH2O)$Key, value = TRUE))
-
-#subsetting the data
-if(subsetSize != -1){
-  set.seed(123)
-  subsetVect <- sample(1:nrow(imgTrainDT), subsetSize)
-  trainDT.h2o <- as.h2o(client = localH2O, imgTrainDT[subsetVect, ], header=T)  
-}else{
-  trainDT.h2o <- as.h2o(client = localH2O, imgTrainDT, header=T)
-}
-print(str(trainDT.h2o[, 1:10]))
-Ncols <- ncol(trainDT.h2o)
-print(str(trainDT.h2o[, (Ncols-10):Ncols]))
-
 ##-------------------------------------------------------
 #"train a model for output"
-train_hex_split <- h2o.splitFrame(trainDT.h2o, ratios = 0.8, shuffle = TRUE)
+set.seed(3456)
 
-#http://0xdata.com/docs/master/model/deep-learning/
-grid_search <- h2o.deeplearning(x = c( grep("V", names(trainDT.h2o), value=T)),
-                                y = "output",
-                                data = train_hex_split[[1]], #trainDT.h2o, 
-                                validation = train_hex_split[[2]],
-                                #nfolds = 4,
-                                
-                                hidden=list(c(400, 400, 400, 400)),
-                                epochs = 100,
-                                activation=c("Rectifier"),
-                                classification = TRUE,
-                                balance_classes = FALSE, 
-                                adaptive_rate = TRUE,
-                                #rho = c(0.92, 0.98),
-                                #epsilon= c(1e-8, 1e-6),
-                                #l2=c(1e-5, 1e-3, 1e-2, 1),
-                                l1=c(1e-5, 1e-3, 1e-2, 1e-1),
-                                fast_mode=TRUE)
+fitControl <- trainControl(
+  method = "cv",
+  number = 5, 
+  verboseIter=T, 
+  classProbs=T, 
+  summaryFunction="Kappa")
+
+library(doParallel)
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)
+
+svmLinearFit <- train(output ~ ., data = imgTrainDT,
+                 method = "svmLinear",
+                 trControl = fitControl,
+                 ## This last option is actually one
+                 ## for gbm() that passes through
+                 verbose = FALSE)
+stopCluster(cl)
+#system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
+
+svmLinearFit
+
 
 
 best_model <- grid_search@model[[1]]
