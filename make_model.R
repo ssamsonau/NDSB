@@ -55,11 +55,14 @@ imgTrainDT[, .outcome:=factor(.outcome)]
 #"train a model for outcome"
 set.seed(3456)
 
+source("mcLogLoss_metrics.R")
+
 fitControl <- trainControl(
   method = "cv",
-  number = 5, 
+  number = 2, 
   verboseIter=T,
-  classProbs=T)
+  classProbs=T, 
+  summaryFunction=mcLogloss_metrics)
 
 #parallel in Windows
 library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
@@ -68,10 +71,10 @@ library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 
 rfFit <- train(.outcome ~ ., data = imgTrainDT,
                method = "rf",
-               ntree=1500,
-               trControl = fitControl,
-               verbose = T, 
-               metric="Kappa")
+               ntree=100, 
+               trControl = fitControl, 
+               metric="mcLogloss",
+               maximize = F)
 
 print(rfFit)
 #stopCluster(cl)

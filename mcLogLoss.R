@@ -15,8 +15,8 @@ mcLogLoss <- function(actual.c, predicted.prob.DF){
   mat <- as.matrix(predicted.prob.DF)
   mlogLoss <- sum( log(mat[ij]) )
   
-  numClasses <- ncol(predicted.prob.DF) 
+  numObserv <- length(actual.c) 
   
-  mlogLoss <- -mlogLoss/numClasses
+  mlogLoss <- -mlogLoss/numObserv
   mlogLoss  
 }
