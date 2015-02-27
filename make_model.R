@@ -2,13 +2,13 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread(unzip("imgTrainDT_128.zip"))
-#imgTrainDT <- fread("imgFeaturesTrainDT.csv")
+#imgTrainDT <- fread(unzip("imgTrainDT_128.zip"))
+imgTrainDT <- fread("imgTrainDT_128.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
-imgTestDT <- fread(unzip("imgTestDT_128.zip"))
+imgTestDT <- fread("imgTestDT_128.csv")
 setnames(imgTestDT, 1, "filename")
 imgTestDT[, filename:=NULL]
 
