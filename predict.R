@@ -1,31 +1,31 @@
 
 #load models
-load("model_rf.Rdata")
+load("model_rf_turn_30.Rdata")
 print(rfFit)
 
 #load train And test data
 library(data.table)
-#imgTrainDT <- fread(unzip("imgTrainDT_128.zip"))
-imgTrainDT <- fread("imgTrainDT_128.csv")
+#imgTrainDT <- fread(unzip("imgTrainDT_turn_30.zip"))
+imgTrainDT <- fread("imgTrainDT_turn_30.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
 
-#imgTestDT <- fread(unzip("imgTestDT_128.zip"))
-imgTestDT <- fread("imgTestDT_128.csv")
+#imgTestDT <- fread(unzip("imgTestDT_turn_30.zip"))
+imgTestDT <- fread("imgTestDT_turn_30.csv")
 setnames(imgTestDT, 1, "filename")
 fileNameCol <- imgTestDT$filename
 imgTestDT[, filename:=NULL]
 
 
 #find variables wich have NA in train or test
-col.with.na.train <- names(imgTrainDT)[ sapply(imgTrainDT, anyNA ) | 
-                                          sapply(lapply(imgTrainDT, is.infinite), sum)]
-col.with.na.test <- names(imgTestDT)[sapply(imgTestDT, anyNA ) | 
-                                       sapply(lapply(imgTestDT, is.infinite), sum)]
-col.with.na <- unique(c(col.with.na.test, col.with.na.train))
-if(length(col.with.na) > 0) imgTrainDT[, eval(col.with.na):=NULL]
+#col.with.na.train <- names(imgTrainDT)[ sapply(imgTrainDT, anyNA ) | 
+#                                          sapply(lapply(imgTrainDT, is.infinite), sum)]
+#col.with.na.test <- names(imgTestDT)[sapply(imgTestDT, anyNA ) | 
+#                                       sapply(lapply(imgTestDT, is.infinite), sum)]
+#col.with.na <- unique(c(col.with.na.test, col.with.na.train))
+#if(length(col.with.na) > 0) imgTrainDT[, eval(col.with.na):=NULL]
 
 
 

@@ -2,23 +2,26 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-#imgTrainDT <- fread(unzip("imgTrainDT_128.zip"))
-imgTrainDT <- fread("imgTrainDT_128.csv")
+#imgTrainDT <- fread(unzip("imgTrainDT_turn_30.zip"))
+imgTrainDT <- fread("imgTrainDT_turn_30.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
-imgTestDT <- fread("imgTestDT_128.csv")
-setnames(imgTestDT, 1, "filename")
-imgTestDT[, filename:=NULL]
+library(EBImage)
+display(matrix(imgTrainDT[5000, ], ncol=30))
+
+#imgTestDT <- fread("imgTestDT_turn_30.csv")
+#setnames(imgTestDT, 1, "filename")
+#imgTestDT[, filename:=NULL]
 
 #find variables wich have NA in train or test
-col.with.na.train <- names(imgTrainDT)[ sapply(imgTrainDT, anyNA ) | 
-                                          sapply(lapply(imgTrainDT, is.infinite), sum)]
-col.with.na.test <- names(imgTestDT)[sapply(imgTestDT, anyNA ) | 
-                                       sapply(lapply(imgTestDT, is.infinite), sum)]
-col.with.na <- unique(c(col.with.na.test, col.with.na.train))
-if(length(col.with.na) > 0) imgTrainDT[, eval(col.with.na):=NULL]
+#col.with.na.train <- names(imgTrainDT)[ sapply(imgTrainDT, anyNA ) | 
+#                                          sapply(lapply(imgTrainDT, is.infinite), sum)]
+#col.with.na.test <- names(imgTestDT)[sapply(imgTestDT, anyNA ) | 
+#                                       sapply(lapply(imgTestDT, is.infinite), sum)]
+#col.with.na <- unique(c(col.with.na.test, col.with.na.train))
+#if(length(col.with.na) > 0) imgTrainDT[, eval(col.with.na):=NULL]
 
 
 #preprocess with caret
@@ -61,32 +64,31 @@ fitControl <- trainControl(
   method = "cv",
   number = 5,
   verboseIter=T, 
-  classProbs=T,
-  summaryFunction=mcLogloss_metrics)
+  classProbs=T)
 
 #parallel in Windows
 library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 #parallel in Unix
 #require('doMC');  registerDoMC()
 
-rfGrid <-  expand.grid(mtry = c(2, 4, 8, 16, 32, 64, 128) )
+#rfGrid <-  expand.grid(mtry = c(2, 4, 8, 16, 32, 64, 128) )
 
 #imgTrainDT[, cl:=as.numeric(imgTrainDT$.outcome)]
 #rfFit <- train(factor(.outcome) ~ ., data = balancedTrainDT[1:5000],
 rfFit <- train(.outcome ~ ., data = imgTrainDT,       
                method = "rf",
                
-               ntree=500, 
+               ntree=50, 
                trControl = fitControl, 
-               metric="mcLogloss", 
-               maximize=F, 
-               tuneGrid=rfGrid)
+               metric="Kappa" 
+               #tuneGrid=rfGrid
+               )
 
 print(rfFit)
 #stopCluster(cl)
 #system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
 
-save(rfFit, file="model_rf.Rdata")
+save(rfFit, file="model_rf_turn_30.Rdata")
 
 
 #predicted <- predict(rfFit, newdata=imgTrainDT, type="prob")

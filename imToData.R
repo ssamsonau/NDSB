@@ -3,7 +3,7 @@ rootDataDir <- "E://Temp/NDSB/train/"
 folderNames <- dir(rootDataDir) 
 
 #numOfSlices <- 20 
-#sizeIm <- 30
+sizeIm <- 30
 
 ################################
 #count all files
@@ -18,12 +18,11 @@ library(jpeg)
 library(data.table)
 
 #imgTrainDT <- data.table( matrix(0, ncol=1, nrow=numOfSlices*7+sizeIm^2)  )
-imgTrainDT <- data.table( matrix(0, ncol=1, nrow=128)  )
-
+imgTrainDT <- data.table( matrix(0, ncol=1, nrow=sizeIm^2)  )
 
 library(EBImage)
-source("EBimageFeatureExtraction.R")
-#source("EBimageTurnImage.R")
+#source("EBimageFeatureExtraction.R")
+source("EBimageTurnImage.R")
 
 i <- 1 
 for(folderName in folderNames){
@@ -34,13 +33,13 @@ for(folderName in folderNames){
     cat("file:  ", i, "/",  numberOfImages, "\n")
     img <- readJPEG( paste0(imgDir, imgName) ) 
       
-    ImFeatures <- getFeatures(img)
+    #ImFeatures <- getFeatures(img)
     
-    #img_r <- turnImage(img = img, sizeIm = sizeIm)
+    img_r <- turnImage(img = img, sizeIm = sizeIm)
     
     #imgTrainDT[ , paste0(folderName, "&", imgName):= c(ImFeatures, img_r)] 
-    imgTrainDT[ , paste0(folderName, "&", imgName):= ImFeatures] 
-    
+    #imgTrainDT[ , paste0(folderName, "&", imgName):= ImFeatures] 
+    imgTrainDT[ , paste0(folderName, "&", imgName):= c(img_r)] 
     
     # save images for diagnostics
     #diag.path <- paste0("./diagnostics/", folderName)
@@ -58,6 +57,6 @@ print(object.size(imgTrainDT), units="Mb")
 # transpose before writing to file. 
 imgTrainDT <- t(imgTrainDT) 
 
-write.csv(imgTrainDT, file="imgTrainDT_128.csv")  
-system2("C://Program Files/7-Zip/7z.exe", "a -tzip imgTrainDT_128.zip imgTrainDT_128.csv")
+write.csv(imgTrainDT, file="imgTrainDT_turn_30.csv")  
+system2("C://Program Files/7-Zip/7z.exe", "a -tzip imgTrainDT_turn_30.zip imgTrainDT_turn_30.csv")
 
