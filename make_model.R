@@ -55,24 +55,39 @@ imgTrainDT[, .outcome:=factor(.outcome)]
 #"train a model for outcome"
 set.seed(3456)
 
-#source("mcLogLoss_metrics.R")
+#balance classes
+numInClasses <- imgTrainDT[, .N, by=.outcome]
+summary(numInClasses[, N])
+hist(numInClasses[, N])
+
+source("balance_classes.R")
+balancedTrainDT <- balance_classes(min.size = 50, max.size = 500, imgTrainDT)
+numInClasses <- balancedTrainDT[, .N, by=.outcome]
+summary(numInClasses[, N])
+
+source("mcLogLoss_metrics.R")
 
 fitControl <- trainControl(
   method = "cv",
-  number = 2, 
-  verboseIter=T)
+  number = 5,
+  verboseIter=T, 
+  classProbs=T,
+  summaryFunction=mcLogloss_metrics)
 
 #parallel in Windows
 library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 #parallel in Unix
 #require('doMC');  registerDoMC()
 
-rfFit <- train(.outcome ~ ., data = imgTrainDT,
+#imgTrainDT[, cl:=as.numeric(imgTrainDT$.outcome)]
+#rfFit <- train(factor(.outcome) ~ ., data = balancedTrainDT[1:5000],
+rfFit <- train(.outcome ~ ., data = balancedTrainDT,       
                method = "rf",
                
-               ntree=100, 
+               ntree=50, 
                trControl = fitControl, 
-               metric="Kappa")
+               metric="mcLogloss", 
+               maximize=F)
 
 print(rfFit)
 #stopCluster(cl)
@@ -84,7 +99,7 @@ save(rfFit, file="model_rf.Rdata")
 predicted <- predict(rfFit, newdata=imgTrainDT, type="prob")
 resultsDT <- data.table(predicted)
 source("mcLogLoss.R")
-print( mcLogLoss(imgTrainDT$.outcome, resultsDT))
+print( mcLogLoss(imgTrainDT$.outcome, resultsDT, ignore.Inf = T))
 
 #print("error on test set")
 #predicted <- h2o.predict(best_model, test_hex)
