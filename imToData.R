@@ -1,10 +1,7 @@
 rm(list=ls())
 rootDataDir <- "E://Temp/NDSB/train/"
 folderNames <- dir(rootDataDir) 
-
-#numOfSlices <- 20 
 sizeIm <- 30
-
 ################################
 #count all files
 numberOfImages <- 0
@@ -16,12 +13,10 @@ library(jpeg)
 # Data Table will be filled by columns - this is significantly faster (vs by rows). 
 # Data Talbe is faster than matrix from Matrix package
 library(data.table)
-
-#imgTrainDT <- data.table( matrix(0, ncol=1, nrow=numOfSlices*7+sizeIm^2)  )
-imgTrainDT <- data.table( matrix(0, ncol=1, nrow=sizeIm^2)  )
+imgTrainDT <- data.table( matrix(0, ncol=1, nrow=sizeIm^2 +14)  )
 
 library(EBImage)
-#source("EBimageFeatureExtraction.R")
+source("EBimageFeatureExtraction.R")
 source("EBimageTurnImage.R")
 
 i <- 1 
@@ -33,20 +28,14 @@ for(folderName in folderNames){
     cat("file:  ", i, "/",  numberOfImages, "\n")
     img <- readJPEG( paste0(imgDir, imgName) ) 
       
-    #ImFeatures <- getFeatures(img)
+    ImFeatures <- getFeatures(img)
     
     img_r <- turnImage(img = img, sizeIm = sizeIm)
     
-    #imgTrainDT[ , paste0(folderName, "&", imgName):= c(ImFeatures, img_r)] 
+    imgTrainDT[ , paste0(folderName, "&", imgName):= c(c(img_r), ImFeatures)] 
     #imgTrainDT[ , paste0(folderName, "&", imgName):= ImFeatures] 
-    imgTrainDT[ , paste0(folderName, "&", imgName):= c(img_r)] 
+    #imgTrainDT[ , paste0(folderName, "&", imgName):= c(img_r)] 
     
-    # save images for diagnostics
-    #diag.path <- paste0("./diagnostics/", folderName)
-    #if(! file.exists(diag.path)){dir.create(diag.path)} 
-    #writeJPEG(ifelse(img_r, 1, 0), target=paste0(diag.path, "/", imgName), bg="black")
-    # end diagnostics
-        
     i <- i + 1
     
   }
@@ -57,6 +46,7 @@ print(object.size(imgTrainDT), units="Mb")
 # transpose before writing to file. 
 imgTrainDT <- t(imgTrainDT) 
 
-write.csv(imgTrainDT, file="imgTrainDT_turn_30.csv")  
-system2("C://Program Files/7-Zip/7z.exe", "a -tzip imgTrainDT_turn_30.zip imgTrainDT_turn_30.csv")
+write.csv(imgTrainDT, file="img_turn_30_14_features.csv")  
+system2("C://Program Files/7-Zip/7z.exe", 
+        "a -tzip img_turn_30_14_features.zip img_turn_30_14_features.csv")
 

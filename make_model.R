@@ -2,27 +2,13 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-#imgTrainDT <- fread(unzip("imgTrainDT_turn_30.zip"))
-imgTrainDT <- fread("imgTrainDT_turn_30.csv")
+imgTrainDT <- fread("img_turn_30_14_features.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
 library(EBImage)
-display(matrix(imgTrainDT[5000, ], ncol=30))
-
-#imgTestDT <- fread("imgTestDT_turn_30.csv")
-#setnames(imgTestDT, 1, "filename")
-#imgTestDT[, filename:=NULL]
-
-#find variables wich have NA in train or test
-#col.with.na.train <- names(imgTrainDT)[ sapply(imgTrainDT, anyNA ) | 
-#                                          sapply(lapply(imgTrainDT, is.infinite), sum)]
-#col.with.na.test <- names(imgTestDT)[sapply(imgTestDT, anyNA ) | 
-#                                       sapply(lapply(imgTestDT, is.infinite), sum)]
-#col.with.na <- unique(c(col.with.na.test, col.with.na.train))
-#if(length(col.with.na) > 0) imgTrainDT[, eval(col.with.na):=NULL]
-
+display(matrix(imgTrainDT[5000, .SD, .SDcols=1:900], ncol=30))
 
 #preprocess with caret
 #--------------------------------------------------
@@ -30,26 +16,16 @@ library(caret)
 nzv <- nearZeroVar(imgTrainDT)
 imgTrainDT[, eval(nzv):=NULL]
 
-col.to.scale <- names(imgTrainDT)
-preProcValues <- preProcess(imgTrainDT[, .SD, .SDcols = col.to.scale ], 
-                            method = c("center", "scale"))
-imgTrainDT[, eval(col.to.scale):=predict(preProcValues, imgTrainDT[, .SD, .SDcols=col.to.scale]) ]
-
-
 descrCor <- cor(imgTrainDT)
 highlyCorDescr <- findCorrelation(descrCor, cutoff = .9)
 imgTrainDT[, eval(highlyCorDescr):=NULL]
 
 #pca_trans <- preProcess(imgTrainDT, method  = "pca", thresh=0.99)
 #imgTrainDT <- predict(pca_trans, imgTrainDT)
-
 #--------------------------------------------------
 
 imgTrainDT[, .outcome:=
              sapply( strsplit( pathCol, "&"), "[", 1) ]
-
-#imgTrainDT[, genType:=as.factor(
-#  sapply( strsplit(as.character(imgTrainDT$outcome), "_") , "[", 1))]
 
 imgTrainDT[grep("shrimp-like_other", .outcome), .outcome:="shrimp_like_other"]
 imgTrainDT[, .outcome:=factor(.outcome)]
@@ -75,6 +51,7 @@ library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 
 #imgTrainDT[, cl:=as.numeric(imgTrainDT$.outcome)]
 #rfFit <- train(factor(.outcome) ~ ., data = balancedTrainDT[1:5000],
+sink("iter.txt")
 rfFit <- train(.outcome ~ ., data = imgTrainDT,       
                method = "rf",
                
@@ -83,28 +60,14 @@ rfFit <- train(.outcome ~ ., data = imgTrainDT,
                metric="Kappa" 
                #tuneGrid=rfGrid
                )
+sink()
 
 print(rfFit)
 #stopCluster(cl)
 #system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
 
-save(rfFit, file="model_rf_turn_30.Rdata")
-
-
-#predicted <- predict(rfFit, newdata=imgTrainDT, type="prob")
-#resultsDT <- data.table(predicted)
-#source("mcLogLoss.R")
-#print( mcLogLoss(imgTrainDT$.outcome, resultsDT, ignore.Inf = T))
-
-#print("error on test set")
-#predicted <- h2o.predict(best_model, test_hex)
-#h2o.confusionMatrix(predicted$predict, test_hex$outcome)["Totals", "Error"]
+save(rfFit, file="model_rf_turn_30_14f.Rdata")
 
 t2 <- Sys.time()
 print(t2-t1)
-
-sink("log.txt")
-print(rfFit)
-print(t2-t1)
-sink()
-
+sink("log.txt"); print(rfFit); print(t2-t1); sink()
