@@ -1,7 +1,7 @@
 # multiclass logLoss
 # https://www.kaggle.com/wiki/MultiClassLogLoss
 
-mcLogLoss <- function(actual.c, predicted.prob.DF){
+mcLogLoss <- function(actual.c, predicted.prob.DF, ignore.Inf = FALSE){
   # actual.c - vector with actual classes for all examples
   
   # predicted.prob.DF - Data frame with col names showing classes
@@ -13,8 +13,12 @@ mcLogLoss <- function(actual.c, predicted.prob.DF){
                                                  # to be in class where is should be
   ij <- cbind(i, j)  
   mat <- as.matrix(predicted.prob.DF)
-  mlogLoss <- sum( log(mat[ij]) )
+  log.mat <- log(mat[ij])
   
+  if(ignore.Inf)  log.mat[is.infinite(log.mat)] <- 0
+  
+  mlogLoss <- sum( log.mat )
+    
   numObserv <- length(actual.c) 
   
   mlogLoss <- -mlogLoss/numObserv
