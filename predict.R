@@ -1,62 +1,30 @@
 
 #load models
-load("model_rf_turn_30.Rdata")
-print(rfFit)
+load("model_rf_41features_Ball.Rdata")
+print(Fit)
 
 #load train And test data
 library(data.table)
-#imgTrainDT <- fread(unzip("imgTrainDT_turn_30.zip"))
-imgTrainDT <- fread("imgTrainDT_turn_30.csv")
+imgTrainDT <- fread("41features.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
-
-#imgTestDT <- fread(unzip("imgTestDT_turn_30.zip"))
-imgTestDT <- fread("imgTestDT_turn_30.csv")
+imgTestDT <- fread("41featuresTest.csv")
 setnames(imgTestDT, 1, "filename")
 fileNameCol <- imgTestDT$filename
 imgTestDT[, filename:=NULL]
 
 
-#find variables wich have NA in train or test
-#col.with.na.train <- names(imgTrainDT)[ sapply(imgTrainDT, anyNA ) | 
-#                                          sapply(lapply(imgTrainDT, is.infinite), sum)]
-#col.with.na.test <- names(imgTestDT)[sapply(imgTestDT, anyNA ) | 
-#                                       sapply(lapply(imgTestDT, is.infinite), sum)]
-#col.with.na <- unique(c(col.with.na.test, col.with.na.train))
-#if(length(col.with.na) > 0) imgTrainDT[, eval(col.with.na):=NULL]
-
-
-
 #preprocess with caret
 #--------------------------------------------------
 library(caret)
-nzv <- nearZeroVar(imgTrainDT)
-imgTrainDT[, eval(nzv):=NULL]
-imgTestDT[, eval(nzv):=NULL]
-
-col.to.scale <- names(imgTrainDT)
-preProcValues <- preProcess(imgTrainDT[, .SD, .SDcols = col.to.scale ], 
-                            method = c("center", "scale"))
-imgTrainDT[, eval(col.to.scale):=predict(preProcValues, imgTrainDT[, .SD, .SDcols=col.to.scale]) ]
-imgTestDT[, eval(col.to.scale):=predict(preProcValues, imgTestDT[, .SD, .SDcols=col.to.scale]) ]
-
-
-descrCor <- cor(imgTrainDT)
-highlyCorDescr <- findCorrelation(descrCor, cutoff = .9)
-imgTrainDT[, eval(highlyCorDescr):=NULL]
-imgTestDT[, eval(highlyCorDescr):=NULL]
-
-#pca_trans <- preProcess(imgTrainDT, method  = "pca", thresh=0.95)
-#imgTestDT <- predict(pca_trans, imgTestDT)
-
-imgTestDT <- data.table(imgTestDT)
-
+c_s_trans <- preProcess(imgTrainDT, method  = c("center", "scale"))
+imgTestDT <- data.table( predict(c_s_trans, imgTestDT) )
 
 #make prediction of output
-predicted <- predict(rfFit, newdata=imgTestDT, type="prob")
-
+#--------------
+predicted <- predict(Fit, newdata=imgTestDT, type="prob")
 
 #form a submission data table
 resultsDT <- data.table(predicted)

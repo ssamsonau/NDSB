@@ -2,7 +2,7 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("81features.csv")
+imgTrainDT <- fread("41features.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
@@ -48,25 +48,32 @@ library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 #parallel in Unix
 #require('doMC');  registerDoMC()
 
-#rfGrid <-  expand.grid(mtry = c(2, 4, 8, 16, 32, 64, 128) )
+#Grid <-  expand.grid(mtry = c(2, 4, 8, 16, 32, 64, 128) )
+#Grid <- expand.grid(C=c(1e-5, 1e-3, 1e-1, 10, 100))
 
 #imgTrainDT[, cl:=as.numeric(imgTrainDT$.outcome)]
-#rfFit <- train(factor(.outcome) ~ ., data = imgTrainDT[1000:1200],
-rfFit <- train(.outcome ~ ., data = imgTrainDT,       
+#Fit <- train(factor(.outcome) ~ ., data = imgTrainDT[1000:1200],
+Fit <- train(.outcome ~ ., data = imgTrainDT,       
                method = "rf",
                
-               ntree=50, 
+               ntree=500, 
                trControl = fitControl, 
                metric="Kappa" 
-               #tuneGrid=rfGrid
+               #,tuneGrid=Grid
                )
 
-print(rfFit)
+print(Fit)
 #stopCluster(cl)
 #system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
 
-save(rfFit, file="model_rf_81features.Rdata")
+save(Fit, file="model_rf_41features.Rdata")
 
 t2 <- Sys.time()
 print(t2-t1)
-sink("log.txt"); print(rfFit); print(t2-t1); sink()
+
+sink("log.txt"); 
+print(Fit); 
+CM <- confusionMatrix(predict(Fit, imgTrainDT), imgTrainDT$.outcome)
+print(CM$byClass)
+print(t2-t1); 
+sink()

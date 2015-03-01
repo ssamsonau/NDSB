@@ -2,8 +2,7 @@ rm(list=ls())
 rootDataDir <- "E://Temp/NDSB/test/"
 folderNames <- dir(rootDataDir) 
 
-
-Radialsplitls = 30
+Radialsplitls = 10
 
 ################################
 #count all files
@@ -51,6 +50,6 @@ print(object.size(imgTestDT), units="Mb")
 # transpose before writing to file. 
 imgTestDT <- t(imgTestDT) 
 
-write.csv(imgTestDT, file="81featuresTest.csv")  
-system2("C://Program Files/7-Zip/7z.exe", "a -tzip 81featuresTest.zip 81featuresTest.csv")
+write.csv(imgTestDT, file="41featuresTest.csv")  
+system2("C://Program Files/7-Zip/7z.exe", "a -tzip 41featuresTest.zip 41featuresTest.csv")
 
