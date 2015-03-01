@@ -2,7 +2,7 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("14features.csv")
+imgTrainDT <- fread("24features.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
@@ -20,8 +20,8 @@ library(caret)
 #highlyCorDescr <- findCorrelation(descrCor, cutoff = .9)
 #imgTrainDT[, eval(highlyCorDescr):=NULL]
 
-#pca_trans <- preProcess(imgTrainDT, method  = "pca", thresh=0.99)
-#imgTrainDT <- predict(pca_trans, imgTrainDT)
+#pca_trans <- preProcess(imgTrainDT, method  = c("center", "scale", "pca"), thresh=0.99)
+#imgTrainDT <- data.table( predict(pca_trans, imgTrainDT) )
 #--------------------------------------------------
 
 imgTrainDT[, .outcome:=
@@ -38,9 +38,10 @@ source("mcLogLoss_metrics.R")
 
 fitControl <- trainControl(
   method = "cv",
-  number = 5,
-  verboseIter=T, 
-  classProbs=T)
+  number = 4,
+  verboseIter=T 
+  #,classProbs=T
+  )
 
 #parallel in Windows
 library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
@@ -54,7 +55,7 @@ library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 rfFit <- train(.outcome ~ ., data = imgTrainDT,       
                method = "rf",
                
-               ntree=500, 
+               ntree=50, 
                trControl = fitControl, 
                metric="Kappa" 
                #tuneGrid=rfGrid
@@ -64,7 +65,7 @@ print(rfFit)
 #stopCluster(cl)
 #system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
 
-save(rfFit, file="model_rf_14features.Rdata")
+save(rfFit, file="model_rf_24features.Rdata")
 
 t2 <- Sys.time()
 print(t2-t1)

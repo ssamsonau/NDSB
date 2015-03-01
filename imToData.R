@@ -1,7 +1,7 @@
 rm(list=ls())
 rootDataDir <- "E://Temp/NDSB/train/"
 folderNames <- dir(rootDataDir) 
-sizeIm <- 30
+Radialsplitls = 10
 ################################
 #count all files
 numberOfImages <- 0
@@ -14,7 +14,7 @@ library(jpeg)
 # Data Talbe is faster than matrix from Matrix package
 library(data.table)
 #imgTrainDT <- data.table( matrix(0, ncol=1, nrow=sizeIm^2 +14)  )
-imgTrainDT <- data.table( matrix(0, ncol=1, nrow=14)  )
+imgTrainDT <- data.table( matrix(0, ncol=1, nrow=14+Radialsplitls)  )
 
 
 library(EBImage)
@@ -30,7 +30,7 @@ for(folderName in folderNames){
     cat("file:  ", i, "/",  numberOfImages, "\n")
     img <- readJPEG( paste0(imgDir, imgName) ) 
       
-    ImFeatures <- getFeatures(img)
+    ImFeatures <- getFeatures(img, Splits = 10)
     
     #img_r <- turnImage(img = img, sizeIm = sizeIm)
     
@@ -48,7 +48,7 @@ print(object.size(imgTrainDT), units="Mb")
 # transpose before writing to file. 
 imgTrainDT <- t(imgTrainDT) 
 
-write.csv(imgTrainDT, file="14features.csv")  
+write.csv(imgTrainDT, file="24features.csv")  
 system2("C://Program Files/7-Zip/7z.exe", 
-        "a -tzip 14features.zip 14features.csv")
+        "a -tzip 24features.zip 24features.csv")
 
