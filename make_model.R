@@ -2,7 +2,7 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("24features.csv")
+imgTrainDT <- fread("81features.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
@@ -65,7 +65,7 @@ print(rfFit)
 #stopCluster(cl)
 #system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
 
-save(rfFit, file="model_rf_24features.Rdata")
+save(rfFit, file="model_rf_81features.Rdata")
 
 t2 <- Sys.time()
 print(t2-t1)

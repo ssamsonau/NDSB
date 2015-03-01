@@ -59,9 +59,13 @@ getFeatures <- function(imgIn, Splits=10){
   
   ############################### COnvert to binary by otsu 
   #find intensity to convert to binary
-  intensityCutoff <- otsu(img, range = c(0, 1), levels = 256)
-  img_bin <- img > intensityCutoff
+  img_bin <- img >   otsu(img)
   featuresIm <- c(featuresIm, binImStatBasic(img_bin))
-    
+  
+  #features for filled Image
+  filled.img <- fillHull( img>otsu(img) )
+  featuresIm <- c(featuresIm, binImStatBasic(img_bin))
+  featuresIm <- c(featuresIm, RadialFeatures(filled.img, Splits))
+  
   featuresIm
 }
