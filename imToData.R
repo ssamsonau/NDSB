@@ -13,11 +13,13 @@ library(jpeg)
 # Data Table will be filled by columns - this is significantly faster (vs by rows). 
 # Data Talbe is faster than matrix from Matrix package
 library(data.table)
-imgTrainDT <- data.table( matrix(0, ncol=1, nrow=sizeIm^2 +14)  )
+#imgTrainDT <- data.table( matrix(0, ncol=1, nrow=sizeIm^2 +14)  )
+imgTrainDT <- data.table( matrix(0, ncol=1, nrow=14)  )
+
 
 library(EBImage)
 source("EBimageFeatureExtraction.R")
-source("EBimageTurnImage.R")
+#source("EBimageTurnImage.R")
 
 i <- 1 
 for(folderName in folderNames){
@@ -30,10 +32,10 @@ for(folderName in folderNames){
       
     ImFeatures <- getFeatures(img)
     
-    img_r <- turnImage(img = img, sizeIm = sizeIm)
+    #img_r <- turnImage(img = img, sizeIm = sizeIm)
     
-    imgTrainDT[ , paste0(folderName, "&", imgName):= c(c(img_r), ImFeatures)] 
-    #imgTrainDT[ , paste0(folderName, "&", imgName):= ImFeatures] 
+    #imgTrainDT[ , paste0(folderName, "&", imgName):= c(c(img_r), ImFeatures)] 
+    imgTrainDT[ , paste0(folderName, "&", imgName):= ImFeatures] 
     #imgTrainDT[ , paste0(folderName, "&", imgName):= c(img_r)] 
     
     i <- i + 1
@@ -46,7 +48,7 @@ print(object.size(imgTrainDT), units="Mb")
 # transpose before writing to file. 
 imgTrainDT <- t(imgTrainDT) 
 
-write.csv(imgTrainDT, file="img_turn_30_14_features.csv")  
+write.csv(imgTrainDT, file="14features.csv")  
 system2("C://Program Files/7-Zip/7z.exe", 
-        "a -tzip img_turn_30_14_features.zip img_turn_30_14_features.csv")
+        "a -tzip 14features.zip 14features.csv")
 

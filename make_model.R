@@ -2,23 +2,23 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("img_turn_30_14_features.csv")
+imgTrainDT <- fread("14features.csv")
 setnames(imgTrainDT, 1, "path")
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
-library(EBImage)
-display(matrix(imgTrainDT[5000, .SD, .SDcols=1:900], ncol=30))
+#library(EBImage)
+#display(matrix(imgTrainDT[5000, .SD, .SDcols=1:900], ncol=30))
 
 #preprocess with caret
 #--------------------------------------------------
 library(caret)
-nzv <- nearZeroVar(imgTrainDT)
-imgTrainDT[, eval(nzv):=NULL]
+#nzv <- nearZeroVar(imgTrainDT)
+#imgTrainDT[, eval(nzv):=NULL]
 
-descrCor <- cor(imgTrainDT)
-highlyCorDescr <- findCorrelation(descrCor, cutoff = .9)
-imgTrainDT[, eval(highlyCorDescr):=NULL]
+#descrCor <- cor(imgTrainDT)
+#highlyCorDescr <- findCorrelation(descrCor, cutoff = .9)
+#imgTrainDT[, eval(highlyCorDescr):=NULL]
 
 #pca_trans <- preProcess(imgTrainDT, method  = "pca", thresh=0.99)
 #imgTrainDT <- predict(pca_trans, imgTrainDT)
@@ -50,23 +50,21 @@ library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 #rfGrid <-  expand.grid(mtry = c(2, 4, 8, 16, 32, 64, 128) )
 
 #imgTrainDT[, cl:=as.numeric(imgTrainDT$.outcome)]
-#rfFit <- train(factor(.outcome) ~ ., data = balancedTrainDT[1:5000],
-sink("iter.txt")
+#rfFit <- train(factor(.outcome) ~ ., data = imgTrainDT[1000:1200],
 rfFit <- train(.outcome ~ ., data = imgTrainDT,       
                method = "rf",
                
-               ntree=50, 
+               ntree=500, 
                trControl = fitControl, 
                metric="Kappa" 
                #tuneGrid=rfGrid
                )
-sink()
 
 print(rfFit)
 #stopCluster(cl)
 #system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
 
-save(rfFit, file="model_rf_turn_30_14f.Rdata")
+save(rfFit, file="model_rf_14features.Rdata")
 
 t2 <- Sys.time()
 print(t2-t1)
