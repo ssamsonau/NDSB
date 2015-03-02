@@ -1,6 +1,6 @@
 
 #load models
-load("model_rf_41features_Ball.Rdata")
+load("model_rf_41features_distort.Rdata")
 print(Fit)
 
 #load train And test data
@@ -19,8 +19,8 @@ imgTestDT[, filename:=NULL]
 #preprocess with caret
 #--------------------------------------------------
 library(caret)
-c_s_trans <- preProcess(imgTrainDT, method  = c("center", "scale"))
-imgTestDT <- data.table( predict(c_s_trans, imgTestDT) )
+#c_s_trans <- preProcess(imgTrainDT, method  = c("center", "scale"))
+#imgTestDT <- data.table( predict(c_s_trans, imgTestDT) )
 
 #make prediction of output
 #--------------

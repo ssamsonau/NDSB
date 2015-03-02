@@ -2,7 +2,7 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("41features.csv")
+imgTrainDT <- fread("41features_distort.csv")
 setnames(imgTrainDT, 1, "path")
 
 pathCol <- imgTrainDT$path
@@ -10,8 +10,8 @@ imgTrainDT[, path:=NULL]
 
 #preprocess with caret
 library(caret)
-c_s_trans <- preProcess(imgTrainDT, method  = c("center", "scale"))
-imgTrainDT <- data.table( predict(c_s_trans, imgTrainDT) )
+#c_s_trans <- preProcess(imgTrainDT, method  = c("center", "scale"))
+#imgTrainDT <- data.table( predict(c_s_trans, imgTrainDT) )
 
 imgTrainDT[, .outcome:= sapply( strsplit( pathCol, "&"), "[", 1) ]
 imgTrainDT[grep("shrimp-like_other", .outcome), .outcome:="shrimp_like_other"]
@@ -19,10 +19,9 @@ imgTrainDT[grep("shrimp-like_other", .outcome), .outcome:="shrimp_like_other"]
 #imgTrainDT_kn <- imgTrainDT[ grep("unknown", pathCol, invert = T), ]
 #imgTrainDT_un <- imgTrainDT[ grep("unknown", pathCol), ]
 
-
-source("balance_classes.R")
-hist(imgTrainDT[, .N, by=.outcome]$N)
-imgTrainDT <- balance_classes(min.size = 500, max.size = 1000, imgTrainDT = imgTrainDT)
+#source("balance_classes.R")
+#hist(imgTrainDT[, .N, by=.outcome]$N)
+#imgTrainDT <- balance_classes(min.size = 500, max.size = 1000, imgTrainDT = imgTrainDT)
 
 
 #imgTrainDT_kn[, .outcome:=factor(.outcome)]
@@ -59,7 +58,7 @@ library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 Fit <- train(.outcome ~ ., data = imgTrainDT,       
                method = "rf",
                
-               ntree=50,
+               ntree=500,
                trControl = fitControl 
                ,metric="Kappa" 
                #,tuneGrid=Grid
@@ -69,7 +68,7 @@ print(Fit)
 #stopCluster(cl)
 #system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
 
-save(Fit, file="model_rf_41features_Ball.Rdata")
+save(Fit, file="model_rf_41features_distort.Rdata")
 
 t2 <- Sys.time()
 print(t2-t1)
