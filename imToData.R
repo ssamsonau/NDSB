@@ -48,7 +48,7 @@ print(object.size(imgTrainDT), units="Mb")
 # transpose before writing to file. 
 imgTrainDT <- t(imgTrainDT) 
 
-write.csv(imgTrainDT, file="41features_distort.csv")  
+write.csv(imgTrainDT, file="41features.csv")  
 system2("C://Program Files/7-Zip/7z.exe", 
-        "a -tzip 41features_distort.zip 41features_distort.csv")
+        "a -tzip 41features.zip 41features.csv")
 

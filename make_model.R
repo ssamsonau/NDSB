@@ -2,7 +2,7 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("41features_distort.csv")
+imgTrainDT <- fread("41features.csv")
 setnames(imgTrainDT, 1, "path")
 
 pathCol <- imgTrainDT$path
@@ -37,8 +37,8 @@ set.seed(3456)
 source("mcLogLoss_metrics.R")
 
 fitControl <- trainControl(
-  method = "cv",
-  number = 4,
+  method = "oob",
+  #number = 4,
   verboseIter=T 
   #,classProbs=T
   )
@@ -52,15 +52,18 @@ library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 #Grid <- expand.grid(C=c(1e-1, 1, 10, 100, 1000))
 #Grid <- expand.grid(C=c(1e-2, 1e-1, 1, 10, 100))
 
+weights_v <- imgTrainDT[, rep(nrow(imgTrainDT)/.N, .N), by=.outcome]$V1
+
 #imgTrainDT[, cl:=as.numeric(imgTrainDT$.outcome)]
 #Fit <- train(factor(.outcome) ~ ., data = imgTrainDT_kn[.outcome %in% 
 #                                                          unique(imgTrainDT_kn$.outcome)[1:20]],
 Fit <- train(.outcome ~ ., data = imgTrainDT,       
                method = "rf",
-               
-               ntree=500,
+               weights = weights_v,   
+             
+               ntree=50,
                trControl = fitControl 
-               ,metric="Kappa" 
+               #,metric="Kappa" 
                #,tuneGrid=Grid
                )
 
@@ -68,7 +71,7 @@ print(Fit)
 #stopCluster(cl)
 #system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
 
-save(Fit, file="model_rf_41features_distort.Rdata")
+save(Fit, file="model_rf_41features.Rdata")
 
 t2 <- Sys.time()
 print(t2-t1)
