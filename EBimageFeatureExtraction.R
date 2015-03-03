@@ -45,27 +45,64 @@ RadialFeatures <- function(img, NumSplits){
   featuresIm
 }
 
+largest_connected <- function(img_bin){
+  ################binary features for largest connected
+  featuresIm <- c()
+  
+  connections_mapping <- bwlabel(img_bin)
+  number_of_connected_parts <- max(connections_mapping)
+  featuresIm <- c(featuresIm, number_of_connected_parts)
+  
+  connected_freq <- table( connections_mapping[connections_mapping!=0] )
+  label_of_largest <-as.numeric( names(connected_freq)[connected_freq == max(connected_freq)] )
+  img_bin_sub <- (bwlabel(img_bin) == label_of_largest) * img_bin 
+  featuresIm <- c(featuresIm, binImStatBasic(img_bin_sub))
+  
+  featuresIm
+}
+
 getFeatures <- function(imgIn, Splits=10){
   library(EBImage)
-  2#display(img)
+  #display(img)
   img <- 1-imgIn
 
   featuresIm <- c()
-  #Radial features addition
+  #sd of intencity
+  featuresIm <- c(featuresIm, sd(img))
+  
+  #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img, Splits))
+  featuresIm <- c(featuresIm, RadialFeatures(img, Splits*2))
+  ####################################
   ############################### COnvert to binary all non zero
   img_bin <- img > 0
   featuresIm <- c(featuresIm, binImStatBasic(img_bin))
+  featuresIm <- c(featuresIm, largest_connected(img_bin))
+
+  #Radial features
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
   
+  ###############################
   ############################### COnvert to binary by otsu 
-  #find intensity to convert to binary
   img_bin <- img >   otsu(img)
   featuresIm <- c(featuresIm, binImStatBasic(img_bin))
   
-  #features for filled Image
-  filled.img <- fillHull( img>otsu(img) )
+  featuresIm <- c(featuresIm, largest_connected(img_bin))
+  #Radial features
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+    
+  ######################################
+  ###features for filled Image
+  img_bin <- fillHull( img>otsu(img) )
   featuresIm <- c(featuresIm, binImStatBasic(img_bin))
-  featuresIm <- c(featuresIm, RadialFeatures(filled.img, Splits))
+  featuresIm <- c(featuresIm, largest_connected(img_bin))
   
+  #Radial features
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  
+  ##############
   featuresIm
 }

@@ -2,8 +2,15 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("41features.csv")
+imgTrainDT <- fread("166features.csv")
 setnames(imgTrainDT, 1, "path")
+
+#imgTrainDTturn <- fread("imgTrainDT_turn_30.csv")
+#setnames(imgTrainDTturn, 1, "path")
+#setnames(imgTrainDTturn, 2:ncol(imgTrainDTturn), 
+#         paste0("t", names(imgTrainDTturn)[2:ncol(imgTrainDTturn)])   )
+#imgTrainDT <- merge(imgTrainDT, imgTrainDTturn, by="path")
+
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
@@ -21,21 +28,24 @@ set.seed(3456)
 #parallel in Unix
 #require('doMC');  registerDoMC()
 
+#source("mcLogLoss_metrics.R")
+
 dir_root = "E:/Temp/forest/"
 dir_models=paste0(dir_root, "separate/")
 
 weights_v <- imgTrainDT[, rep(nrow(imgTrainDT)/.N, .N), by=.outcome]$V1
 
-class_frequency <- imgTrainDT[, .N, by=.outcome]$N
-sample_size <- class_frequency
-sample_size[class_frequency > 5*min(class_frequency)] <- 5*min(class_frequency)-1
+#class_frequency <- imgTrainDT[, .N, by=.outcome]$N
+#sample_size <- class_frequency
+#sample_size[class_frequency > 10*min(class_frequency)] <- 10*min(class_frequency) -1
 
 ###################################### fit one model
 fit_one_model <- function(i){
   library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
-  fitControl <- trainControl(method = "oob", verboseIter=T #,classProbs=T
+  fitControl <- trainControl(method = "oob", verboseIter=T 
+                             #,classProbs=T, summaryFunction = mcLogloss_metrics
   )
-  Grid <-  expand.grid(mtry=c(21) )
+  Grid <-  expand.grid(mtry=c(111) )
   #Fit <- train(factor(.outcome) ~ ., data = imgTrainDT_kn[.outcome %in% 
   #                                                 unique(imgTrainDT_kn$.outcome)[1:20]],
   Fit <- train(x=imgTrainDT[, .SD, .SDcols=grep(".outcome", names(imgTrainDT), invert=T)], 
@@ -44,12 +54,13 @@ fit_one_model <- function(i){
                method = "rf", 
                weights = weights_v,   
                ntree=100, 
-               trControl = fitControl, 
                norm.votes=FALSE # to combine forests 
                ,metric="Kappa"
-               ,strata=imgTrainDT[, .outcome],
-               ,sampsize = sample_size   #rep(9, nlevels(imgTrainDT$.outcome) )
+               #,strata=imgTrainDT[, .outcome],
+               #,sampsize = sample_size   #rep(9, nlevels(imgTrainDT$.outcome) )
                  
+               #,tuneLength=4
+               ,trControl = fitControl
                ,tuneGrid=Grid
   )
   save(Fit, file=paste0(dir_models, "rf_fit_",i, ".Rdata") )  
@@ -67,7 +78,7 @@ fit_models <- function(start_number=1, number_of_models=1){
 }
 
 ######################## apply 
-fit_models(1, 1)
+fit_models(1, 5)
 
 t2 <- Sys.time()
 print(t2-t1)

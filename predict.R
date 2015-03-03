@@ -8,7 +8,7 @@ fit.all <- Fit$finalModel
 rm(Fit)
 
 library(randomForest)
-for(name in models_names[2:7]){
+for(name in models_names[2:10]){
   print(paste0("working with", name))
   load(paste0(dir_models, name))
   fit.all <- combine(fit.all, Fit$finalModel)
