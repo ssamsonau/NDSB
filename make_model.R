@@ -4,29 +4,11 @@ t1 <- Sys.time()
 library(data.table)
 imgTrainDT <- fread("41features.csv")
 setnames(imgTrainDT, 1, "path")
-
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
-#preprocess with caret
-library(caret)
-#c_s_trans <- preProcess(imgTrainDT, method  = c("center", "scale"))
-#imgTrainDT <- data.table( predict(c_s_trans, imgTrainDT) )
-
 imgTrainDT[, .outcome:= sapply( strsplit( pathCol, "&"), "[", 1) ]
 imgTrainDT[grep("shrimp-like_other", .outcome), .outcome:="shrimp_like_other"]
-
-#imgTrainDT_kn <- imgTrainDT[ grep("unknown", pathCol, invert = T), ]
-#imgTrainDT_un <- imgTrainDT[ grep("unknown", pathCol), ]
-
-#source("balance_classes.R")
-#hist(imgTrainDT[, .N, by=.outcome]$N)
-#imgTrainDT <- balance_classes(min.size = 500, max.size = 1000, imgTrainDT = imgTrainDT)
-
-
-#imgTrainDT_kn[, .outcome:=factor(.outcome)]
-#imgTrainDT_un[, .outcome:=factor(.outcome)]
-
 imgTrainDT[, .outcome:=factor(.outcome)]
 
 ##-------------------------------------------------------
@@ -34,51 +16,66 @@ imgTrainDT[, .outcome:=factor(.outcome)]
 library(caret)
 set.seed(3456)
 
-source("mcLogLoss_metrics.R")
-
-fitControl <- trainControl(
-  method = "oob",
-  #number = 4,
-  verboseIter=T 
-  #,classProbs=T
-  )
-
 #parallel in Windows
-library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
+#library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 #parallel in Unix
 #require('doMC');  registerDoMC()
 
-#Grid <-  expand.grid(mtry=c(2, 21, 41),  maxnodes=c(5, 10, 20) )
-#Grid <- expand.grid(C=c(1e-1, 1, 10, 100, 1000))
-#Grid <- expand.grid(C=c(1e-2, 1e-1, 1, 10, 100))
+dir_root = "E:/Temp/forest/"
+dir_models=paste0(dir_root, "separate/")
 
 weights_v <- imgTrainDT[, rep(nrow(imgTrainDT)/.N, .N), by=.outcome]$V1
 
-#imgTrainDT[, cl:=as.numeric(imgTrainDT$.outcome)]
-#Fit <- train(factor(.outcome) ~ ., data = imgTrainDT_kn[.outcome %in% 
-#                                                          unique(imgTrainDT_kn$.outcome)[1:20]],
-Fit <- train(.outcome ~ ., data = imgTrainDT,       
-               method = "rf",
+class_frequency <- imgTrainDT[, .N, by=.outcome]$N
+sample_size <- class_frequency
+sample_size[class_frequency > 5*min(class_frequency)] <- 5*min(class_frequency)-1
+
+###################################### fit one model
+fit_one_model <- function(i){
+  library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
+  fitControl <- trainControl(method = "oob", verboseIter=T #,classProbs=T
+  )
+  Grid <-  expand.grid(mtry=c(21) )
+  #Fit <- train(factor(.outcome) ~ ., data = imgTrainDT_kn[.outcome %in% 
+  #                                                 unique(imgTrainDT_kn$.outcome)[1:20]],
+  Fit <- train(x=imgTrainDT[, .SD, .SDcols=grep(".outcome", names(imgTrainDT), invert=T)], 
+               y=imgTrainDT[, .outcome], 
+               data = imgTrainDT, 
+               method = "rf", 
                weights = weights_v,   
-             
-               ntree=50,
-               trControl = fitControl 
-               #,metric="Kappa" 
-               #,tuneGrid=Grid
-               )
+               ntree=100, 
+               trControl = fitControl, 
+               norm.votes=FALSE # to combine forests 
+               ,metric="Kappa"
+               ,strata=imgTrainDT[, .outcome],
+               ,sampsize = sample_size   #rep(9, nlevels(imgTrainDT$.outcome) )
+                 
+               ,tuneGrid=Grid
+  )
+  save(Fit, file=paste0(dir_models, "rf_fit_",i, ".Rdata") )  
+  stopCluster(cl)
+}
 
-print(Fit)
-#stopCluster(cl)
-#system2("C://Windows/System32/cmd.exe", "taskkill /F /IM Rscript.exe")
+#################################  Fit several models
+fit_models <- function(start_number=1, number_of_models=1){
+  i<- start_number; set.seed(i)
+  while(i <= number_of_models){
+    print(paste0("fitting model N ", i))
+    fit_one_model(i)
+    i <- i+1  
+  }
+}
 
-save(Fit, file="model_rf_41features.Rdata")
+######################## apply 
+fit_models(1, 1)
 
 t2 <- Sys.time()
 print(t2-t1)
 
+load(file=paste0(dir_models, "rf_fit_",1, ".Rdata") )
 sink("log.txt"); 
 print(Fit); 
-CM <- confusionMatrix(predict(Fit, imgTrainDT), imgTrainDT$.outcome)
-print(CM$byClass)
+#CM <- confusionMatrix(predict(rf.all, imgTrainDT), imgTrainDT$.outcome)
+#print(CM$byClass)
 print(t2-t1); 
 sink()

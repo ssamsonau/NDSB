@@ -1,14 +1,31 @@
 
+dir_root = "E:/Temp/forest/"
+dir_models=paste0(dir_root, "separate/")
+models_names <- dir(dir_models)
+
+load(paste0(dir_models, models_names[1]))
+fit.all <- Fit$finalModel
+rm(Fit)
+
+library(randomForest)
+for(name in models_names[2:7]){
+  print(paste0("working with", name))
+  load(paste0(dir_models, name))
+  fit.all <- combine(fit.all, Fit$finalModel)
+  rm(Fit)
+}
+#save(fit.all, file=paste0(dir_root, "fit_all_1.Rdata") )
+
 #load models
-load("model_rf_41features_distort.Rdata")
-print(Fit)
+#load("model_rf_41features_distort.Rdata")
+print(fit.all)
 
 #load train And test data
 library(data.table)
-imgTrainDT <- fread("41features.csv")
-setnames(imgTrainDT, 1, "path")
-pathCol <- imgTrainDT$path
-imgTrainDT[, path:=NULL]
+#imgTrainDT <- fread("41features.csv")
+#setnames(imgTrainDT, 1, "path")
+#pathCol <- imgTrainDT$path
+#imgTrainDT[, path:=NULL]
 
 imgTestDT <- fread("41featuresTest.csv")
 setnames(imgTestDT, 1, "filename")
@@ -24,7 +41,8 @@ library(caret)
 
 #make prediction of output
 #--------------
-predicted <- predict(Fit, newdata=imgTestDT, type="prob")
+library(randomForest)
+predicted <- predict(fit.all, newdata=imgTestDT, type="prob")
 
 #form a submission data table
 resultsDT <- data.table(predicted)
