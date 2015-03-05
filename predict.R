@@ -8,7 +8,7 @@ fit.all <- Fit$finalModel
 rm(Fit)
 
 library(randomForest)
-for(name in models_names[2:10]){
+for(name in models_names[2:100]){
   print(paste0("working with", name))
   load(paste0(dir_models, name))
   fit.all <- combine(fit.all, Fit$finalModel)
@@ -27,7 +27,7 @@ library(data.table)
 #pathCol <- imgTrainDT$path
 #imgTrainDT[, path:=NULL]
 
-imgTestDT <- fread("41featuresTest.csv")
+imgTestDT <- fread("166featuresTest.csv")
 setnames(imgTestDT, 1, "filename")
 fileNameCol <- imgTestDT$filename
 imgTestDT[, filename:=NULL]

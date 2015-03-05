@@ -78,7 +78,7 @@ fit_models <- function(start_number=1, number_of_models=1){
 }
 
 ######################## apply 
-fit_models(1, 5)
+fit_models(1, 100)
 
 t2 <- Sys.time()
 print(t2-t1)
