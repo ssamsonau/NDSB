@@ -55,7 +55,8 @@ largest_connected <- function(img_bin){
   
   connected_freq <- table( connections_mapping[connections_mapping!=0] )
   label_of_largest <-as.numeric( names(connected_freq)[connected_freq == max(connected_freq)] )
-  img_bin_sub <- (bwlabel(img_bin) == label_of_largest) * img_bin 
+  img_bin_sub <- (bwlabel(img_bin) %in% label_of_largest) * img_bin 
+  # should be %in% instead of "==" , for situation when there is equal number of different labels 
   featuresIm <- c(featuresIm, binImStatBasic(img_bin_sub))
   
   featuresIm
