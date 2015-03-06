@@ -2,10 +2,10 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("166features.csv")
+imgTrainDT <- fread("370features.csv")
 setnames(imgTrainDT, 1, "path")
 
-#imgTrainDTturn <- fread("900features30x30binaryLargest.csv")
+#imgTrainDTturn <- fread("9")
 #setnames(imgTrainDTturn, 1, "path")
 #setnames(imgTrainDTturn, 2:ncol(imgTrainDTturn), 
 #         paste0("t", names(imgTrainDTturn)[2:ncol(imgTrainDTturn)])   )
@@ -98,8 +98,8 @@ fit_models <- function(start_number=1, number_of_models=1){
 #number of trees per file
 n_trees = 100 # should be divisible by number of cpu for efficient foreach
 #to find best mtry using out of bag error
-#b_mtry <- fit_one_model_caret(1)
-b_mtry = 166
+b_mtry <- fit_one_model_caret(1)
+#b_mtry = 166
 
 
 #to train many models

@@ -3,14 +3,18 @@ rootDataDir <- "E://Temp/NDSB/test/"
 folderNames <- dir(rootDataDir) 
 
 radial_splits = 10
-
+#size_im <- 30
 ################################
-number_of_features <- 46 +  radial_splits*4 + radial_splits*8
+library(jpeg)
+library(EBImage)
+source("EBimageFeatureExtraction.R")
+#source("EBimageTurnImage.R")
+img <- 1- readJPEG("sample.jpg")
+number_of_features <- length(getFeatures(img, Splits = radial_splits))
 
-#count all files
+
 numberOfImages <- length(dir(rootDataDir))
 
-library(jpeg)
 # Data Table will be filled by columns - this is significantly faster (vs by rows). 
 # Data Talbe is faster than matrix from Matrix package
 library(data.table)
@@ -21,21 +25,43 @@ library(EBImage)
 source("EBimageFeatureExtraction.R")
 #source("EBimageTurnImage.R")
 
-i <- 1 
-  imgDir <- rootDataDir
-  imgNames <- dir(imgDir)
-  for(imgName in imgNames){
-    cat("file:  ", i, "/",  numberOfImages, "\n")
+imgDir <- rootDataDir
+imgNamesDT <- data.table("imgN" = dir(imgDir))
+imgNamesDT[, gr:= seq(1:.N) %/% 1000]
+max_gr <- imgNamesDT[, max(gr)]
+
+t <- Sys.time()
+
+for(grN in 0:max_gr){
+  
+  print(paste0("done with ", grN, "/", max_gr, " groups" ))
+  print(paste0("estimated time to complete ", 
+               round((Sys.time()-t)/grN * (max_gr-grN)/60, digits = 2), " hours") )
+  
+  imgNames <- imgNamesDT[gr == grN, imgN]
+
+  #  for(imgName in imgNames){
+  library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
+  imgTestDT_folder <- foreach(imgName = imgNames, .combine=cbind) %dopar% {
+    library(data.table)
+    library(jpeg)        
+    imgTestDT_local <- data.table( matrix(0, ncol=1, nrow= number_of_features)  )
+    
     img <- readJPEG( paste0(imgDir, imgName) ) 
-      
+    
     ImFeatures <- getFeatures(img, Splits = radial_splits)
     #img_r <- turnImage(img = img, sizeIm = sizeIm)
-
-    #imgTestDT[ , paste0(folderName, "&", imgName):= c(ImFeatures, img_r)] 
-    imgTestDT[ , eval(imgName):= ImFeatures] 
     
-    i <- i + 1    
+    #imgTestDT[ , paste0(folderName, "&", imgName):= c(ImFeatures, img_r)] 
+    imgTestDT_local[ , eval(imgName):= ImFeatures] 
+    
+    imgTestDT_local[, V1:=NULL]
+    imgTestDT_local    
   }
+  stopCluster(cl)
+  imgTestDT <- cbind(imgTestDT, imgTestDT_folder)
+}
+
  
 imgTestDT[, V1:=NULL]
 print(object.size(imgTestDT), units="Mb") 

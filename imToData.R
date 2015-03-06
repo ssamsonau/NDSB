@@ -4,7 +4,13 @@ folderNames <- dir(rootDataDir)
 radial_splits = 10
 #size_im <- 30
 ################################
-number_of_features <- 46 +  radial_splits*4 + radial_splits*8
+library(jpeg)
+library(EBImage)
+source("EBimageFeatureExtraction.R")
+#source("EBimageTurnImage.R")
+img <- 1- readJPEG("sample.jpg")
+number_of_features <- length(getFeatures(img, Splits = radial_splits))
+#number_of_features <- 46 +  radial_splits*4 + radial_splits*8
 #number_of_features <- size_im^2
 
 #count all files
@@ -13,22 +19,20 @@ for(folderName in folderNames){
   numberOfImages <- numberOfImages + length(dir(paste0(rootDataDir, folderName)))
 }
 
-library(jpeg)
 # Data Table will be filled by columns - this is significantly faster (vs by rows). 
 # Data Talbe is faster than matrix from Matrix package
 library(data.table)
 imgTrainDT <- data.table( matrix(0, ncol=1, nrow= number_of_features)  )
 
-library(EBImage)
-source("EBimageFeatureExtraction.R")
-#source("EBimageTurnImage.R")
 
 i <- 1 
-for(folderName in folderNames[2]){
-
+for(folderName in folderNames){
   imgDir <- paste0(rootDataDir, folderName, "/")
-  cat("folder: ", imgDir, "\n")    
+  i <- ncol(imgTrainDT)
+  cat("done with:  ", i-1, "/",  numberOfImages, "  files\n")
+  cat("working with the folder: ", imgDir, "\n") 
   imgNames <- dir(imgDir)
+  
   #for(imgName in imgNames){
   library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
   imgTrainDT_folder <- foreach(imgName = imgNames, .combine=cbind) %dopar% {
@@ -36,7 +40,6 @@ for(folderName in folderNames[2]){
     library(jpeg)        
     imgTrainDT_local <- data.table( matrix(0, ncol=1, nrow= number_of_features)  )
     
-    cat("file:  ", i, "/",  numberOfImages, "\n", file="current_file.txt")
     img <- readJPEG( paste0(imgDir, imgName) ) 
       
     ImFeatures <- getFeatures(img, Splits = radial_splits)
@@ -47,7 +50,6 @@ for(folderName in folderNames[2]){
     imgTrainDT_local[ , paste0(folderName, "&", imgName):= ImFeatures] 
     #imgTrainDT[ , paste0(folderName, "&", imgName):= c(img_r)] 
     
-    i <- i + 1
     imgTrainDT_local[, V1:=NULL]
     imgTrainDT_local
   }

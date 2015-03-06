@@ -1,14 +1,22 @@
 #source("http://bioconductor.org/biocLite.R")
 #biocLite("EBImage")
 binImStatBasic <- function(img_bin){
-  Eccent <- computeFeatures.moment(img_bin)[1, "m.eccentricity"]
+  Moments <- computeFeatures.moment(img_bin)[1, c("m.majoraxis","m.eccentricity")]
+  Eccent <- Moments["m.eccentricity"]
+  semi_major_axis <- Moments["m.majoraxis"] / 2 
+  semi_minor_axis <- sqrt( (1-Eccent^2)*semi_major_axis^2 )
+  elipse_area <- pi * semi_major_axis * semi_minor_axis
+  
   Shape <-  computeFeatures.shape(img_bin)[1, ] #6
-  featuresIm <- c(Eccent, Shape)
+  area_to_per <- Shape["s.area"]/Shape["s.perimeter"]
+  # Shape["s.area"] is actually count of pixels - so is jus a mass
+  density <- Shape["s.area"]/elipse_area
 
+  featuresIm <- c(Eccent, Shape, elipse_area, area_to_per, density)
   featuresIm
 } 
 
-RadialFeatures <- function(img, NumSplits){
+RadialFeatures <- function(img, NumSplits=10){
   NumSplits <- NumSplits+1
   featuresIm <- c()
   totalIntencity <- sum(img)
@@ -27,12 +35,35 @@ RadialFeatures <- function(img, NumSplits){
   cm.y <- round( sum( img[ind.of.pixels] * y )  / sum(img[ind.of.pixels]) )
   
   radius.m <- matrix(NA, nrow=nrow(img), ncol=ncol(img))
-
+  angle.m <- matrix(NA, nrow=nrow(img), ncol=ncol(img))
+  
   ind.of.center <- matrix(rep(c(cm.x, cm.y), dim(ind.of.pixels)[1] ), ncol=2, byrow = T) 
   diference <- ind.of.pixels - ind.of.center
   #distance from the center of mass
   radius <- sqrt(rowSums(diference^2))
   radius.m[ind.of.pixels] <-  radius
+  
+  angle <- atan2(diference[,2], diference[, 1])*180/pi
+  angle.m[ind.of.pixels] <-  angle
+  
+  mass_by_angle_f <- function(a_split_number){
+    a.splits <- seq(-180, 180, length.out=a_split_number)
+    mass_by_angle <- c()    
+    
+    for(i in 2:length(a.splits)){
+      match.angle.m <- a.splits[i-1] < angle.m  & angle.m < a.splits[i] 
+      mass_by_angle <- c(mass_by_angle, 
+                         sum ( img[ which(match.angle.m, arr.ind =T)]  ) / totalIntencity )
+    }  
+    
+    featuresIm <- c(sd(mass_by_angle),
+                    sd(mass_by_angle)/mean(mass_by_angle) )
+    featuresIm    
+  }
+  
+  featuresIm <- c(featuresIm, mass_by_angle_f(10) )
+  featuresIm <- c(featuresIm, mass_by_angle_f(20) )
+  featuresIm <- c(featuresIm, mass_by_angle_f(40) )
   
   #find ratio of mass within certain radius interval 
   r.splits <- seq(0, max(radius), length.out = NumSplits)
@@ -42,10 +73,11 @@ RadialFeatures <- function(img, NumSplits){
     featuresIm <- c(featuresIm, 
                     sum ( img[ which(match.radius.m, arr.ind =T)]  ) / totalIntencity )
   }  
+  
   featuresIm
 }
 
-largest_connected <- function(img_bin){
+largest_connected <- function(img_bin, Splits=10){
   ################binary features for largest connected
   featuresIm <- c()
   
@@ -58,6 +90,11 @@ largest_connected <- function(img_bin){
   img_bin_sub <- (bwlabel(img_bin) %in% label_of_largest) * img_bin 
   # should be %in% instead of "==" , for situation when there is equal number of different labels 
   featuresIm <- c(featuresIm, binImStatBasic(img_bin_sub))
+
+  #Radial features
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, Splits))
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, 2*Splits))
+  
   
   featuresIm
 }
@@ -69,7 +106,9 @@ getFeatures <- function(imgIn, Splits=10){
 
   featuresIm <- c()
   #sd of intencity
-  featuresIm <- c(featuresIm, sd(img))
+  non_zero_im <- img[img!=0]
+  featuresIm <- c(featuresIm, sd(non_zero_im), sum(non_zero_im), sd(non_zero_im)/mean(non_zero_im),
+                  quantile(non_zero_im), quantile(non_zero_im)/median(non_zero_im) )
   
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img, Splits))
@@ -78,7 +117,7 @@ getFeatures <- function(imgIn, Splits=10){
   ############################### COnvert to binary all non zero
   img_bin <- img > 0
   featuresIm <- c(featuresIm, binImStatBasic(img_bin))
-  featuresIm <- c(featuresIm, largest_connected(img_bin))
+  featuresIm <- c(featuresIm, largest_connected(img_bin, Splits))
 
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
@@ -89,7 +128,7 @@ getFeatures <- function(imgIn, Splits=10){
   img_bin <- img >   otsu(img)
   featuresIm <- c(featuresIm, binImStatBasic(img_bin))
   
-  featuresIm <- c(featuresIm, largest_connected(img_bin))
+  featuresIm <- c(featuresIm, largest_connected(img_bin, Splits))
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
@@ -98,7 +137,7 @@ getFeatures <- function(imgIn, Splits=10){
   ###features for filled Image
   img_bin <- fillHull( img>otsu(img) )
   featuresIm <- c(featuresIm, binImStatBasic(img_bin))
-  featuresIm <- c(featuresIm, largest_connected(img_bin))
+  featuresIm <- c(featuresIm, largest_connected(img_bin, Splits))
   
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
