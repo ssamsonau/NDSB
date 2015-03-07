@@ -2,7 +2,7 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("370features.csv")
+imgTrainDT <- fread("342features.csv")
 setnames(imgTrainDT, 1, "path")
 
 #imgTrainDTturn <- fread("turned")
@@ -96,7 +96,7 @@ fit_one_model_rf <- function(i){
 
 #################################  Fit several models
 fit_models <- function(start_number=1, number_of_models=1){
-  i<- start_number; set.seed(i)
+  i<- start_number
   while(i <= number_of_models){
     print(paste0("fitting model N ", i))  
     fit_one_model_rf(i)  
