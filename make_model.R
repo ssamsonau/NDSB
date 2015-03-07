@@ -2,7 +2,7 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("342features.csv")
+imgTrainDT <- fread("239features.csv")
 setnames(imgTrainDT, 1, "path")
 
 #imgTrainDTturn <- fread("turned")

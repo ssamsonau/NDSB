@@ -54,9 +54,11 @@ RadialFeatures <- function(img, NumSplits=10){
     for(i in 2:length(a.splits)){
       #logic matrix of matching angles
       match.angle.m <- a.splits[i-1] < angle.m  & angle.m < a.splits[i]
-      chosen.indexes.m <- which( as.logical( match.angle.m * match.radius.m, arr.ind =T) )
+      chosen.indexes.m <- which( match.angle.m * match.radius.m == 1, arr.ind=T )
+    
+      sum_for_rad <- sum(img[ which( match.radius.m==1, arr.ind =T ) ])
       mass_by_angle <- c(mass_by_angle, sum ( img[chosen.indexes.m] ) / 
-                          sum(img[which( as.logical( match.radius.m, arr.ind =T) )])
+                          ifelse(sum_for_rad, sum_for_rad, 1)#remove division by 0
                          )
     }  
     
@@ -65,8 +67,8 @@ RadialFeatures <- function(img, NumSplits=10){
   }
 
   # angle features - no radius splitting
-  match.radius.m_gl <- radius.m
-  match.radius.m_gl[, ] <- T
+  match.radius.m_gl <- matrix(NA, nrow=nrow(img), ncol=ncol(img) ) 
+  match.radius.m_gl[ind.of.pixels] <- T
   
   featuresIm <- c(featuresIm, mass_by_angle_f(10, match.radius.m_gl) )
   featuresIm <- c(featuresIm, mass_by_angle_f(20, match.radius.m_gl) )
@@ -78,7 +80,7 @@ RadialFeatures <- function(img, NumSplits=10){
   r_sd <- c() 
   for(i in 2:length(r.splits)){
     match.radius.m <- r.splits[i-1] < radius.m  & radius.m < r.splits[i] 
-    r_m <- sum ( img[ which(match.radius.m, arr.ind =T)]  ) / totalIntencity 
+    r_m <- sum ( img[ which(match.radius.m, arr.ind =T)]  ) / totalIntencity
     featuresIm <- c(featuresIm, r_m )
     r_sd <- c(r_sd, r_m) 
     
