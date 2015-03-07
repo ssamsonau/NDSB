@@ -106,7 +106,7 @@ largest_connected <- function(img_bin, Splits=10){
 
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, Splits))
-  #featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, 2*Splits))
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, 2*Splits))
   
   
   featuresIm
@@ -118,14 +118,15 @@ getFeatures <- function(imgIn, Splits=10){
   img <- 1-imgIn
 
   featuresIm <- c()
+  #count all pixels
+  featuresIm <- c(featuresIm, sum(img>0) )
   #sd of intencity
   non_zero_im <- img[img!=0]
-  featuresIm <- c(featuresIm, sd(non_zero_im), sum(non_zero_im), sd(non_zero_im)/mean(non_zero_im),
-                  quantile(non_zero_im), quantile(non_zero_im)/median(non_zero_im) )
+  featuresIm <- c(featuresIm, sd(non_zero_im), sum(non_zero_im), quantile(non_zero_im))
   
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img, Splits))
-  #featuresIm <- c(featuresIm, RadialFeatures(img, Splits*2))
+  featuresIm <- c(featuresIm, RadialFeatures(img, Splits*2))
   ####################################
   ############################### COnvert to binary all non zero
   img_bin <- img > 0
@@ -134,7 +135,7 @@ getFeatures <- function(imgIn, Splits=10){
 
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
-  #featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
   
   ###############################
   ############################### COnvert to binary by otsu 
@@ -144,7 +145,7 @@ getFeatures <- function(imgIn, Splits=10){
   featuresIm <- c(featuresIm, largest_connected(img_bin, Splits))
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
-  #featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
     
   ######################################
   ###features for filled Image
@@ -154,7 +155,7 @@ getFeatures <- function(imgIn, Splits=10){
   
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
-  #featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
   
   ##############
   featuresIm
