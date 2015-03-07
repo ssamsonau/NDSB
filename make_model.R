@@ -5,15 +5,25 @@ library(data.table)
 imgTrainDT <- fread("370features.csv")
 setnames(imgTrainDT, 1, "path")
 
-#imgTrainDTturn <- fread("9")
+#imgTrainDTturn <- fread("turned")
 #setnames(imgTrainDTturn, 1, "path")
 #setnames(imgTrainDTturn, 2:ncol(imgTrainDTturn), 
 #         paste0("t", names(imgTrainDTturn)[2:ncol(imgTrainDTturn)])   )
 #imgTrainDT <- merge(imgTrainDT, imgTrainDTturn, by="path")
-
 pathCol <- imgTrainDT$path
 imgTrainDT[, path:=NULL]
 
+library(caret)
+nzv <- nearZeroVar(imgTrainDT)
+imgTrainDT[, eval(nzv):=NULL]
+
+###infinite to NA and the impute
+imgTrainDT[, names(imgTrainDT):=lapply(.SD, function(x){replace(x, is.infinite(x), NA)}), 
+           .SDcols=1:ncol(imgTrainDT)]
+knn_imp <-  preProcess(imgTrainDT, method = "knnImpute", k=10)
+imgTrainDT <- data.table(predict(knn_imp, imgTrainDT))
+
+###form outcome coloumn
 imgTrainDT[, .outcome:= sapply( strsplit( pathCol, "&"), "[", 1) ]
 imgTrainDT[grep("shrimp-like_other", .outcome), .outcome:="shrimp_like_other"]
 imgTrainDT[, .outcome:=factor(.outcome)]
@@ -103,12 +113,12 @@ b_mtry <- fit_one_model_caret(1)
 
 
 #to train many models
-fit_models(2, 100)
+#fit_models(2, 100)
 
 t2 <- Sys.time()
 print(t2-t1)
 
-load(file=paste0(dir_models, "rf_fit_",1, ".Rdata") )
+load(file=paste0(dir_models, "rf_fit_caret_",1, ".Rdata") )
 sink("log.txt"); 
 print(Fit); 
 #CM <- confusionMatrix(predict(rf.all, imgTrainDT), imgTrainDT$.outcome)
