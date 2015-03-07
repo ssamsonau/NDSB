@@ -106,7 +106,7 @@ largest_connected <- function(img_bin, Splits=10){
 
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, 2*Splits))
+  #featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, 2*Splits))
   
   
   featuresIm
@@ -126,7 +126,7 @@ getFeatures <- function(imgIn, Splits=10){
   
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img, Splits*2))
+  #featuresIm <- c(featuresIm, RadialFeatures(img, Splits*2))
   ####################################
   ############################### COnvert to binary all non zero
   img_bin <- img > 0
@@ -135,7 +135,7 @@ getFeatures <- function(imgIn, Splits=10){
 
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  #featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
   
   ###############################
   ############################### COnvert to binary by otsu 
@@ -145,7 +145,7 @@ getFeatures <- function(imgIn, Splits=10){
   featuresIm <- c(featuresIm, largest_connected(img_bin, Splits))
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  #featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
     
   ######################################
   ###features for filled Image
@@ -155,7 +155,7 @@ getFeatures <- function(imgIn, Splits=10){
   
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  #featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
   
   ##############
   featuresIm
