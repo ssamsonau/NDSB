@@ -30,14 +30,14 @@ imgNamesDT <- data.table("imgN" = dir(imgDir))
 imgNamesDT[, gr:= seq(1:.N) %/% 1000]
 max_gr <- imgNamesDT[, max(gr)]
 
-t <- Sys.time()
+t1 <- Sys.time()
 
 for(grN in 0:max_gr){
   
   print(paste0("done with ", grN, "/", max_gr, " groups" ))
-  print(paste0("estimated time to complete ", 
-               round((Sys.time()-t)/grN * (max_gr-grN)/60, digits = 2), " hours") )
-  
+  print("estimated time to complete ")
+  print(round((Sys.time()-t1)/grN * (max_gr-grN), digits = 2) )
+    
   imgNames <- imgNamesDT[gr == grN, imgN]
 
   #  for(imgName in imgNames){

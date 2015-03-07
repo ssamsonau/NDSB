@@ -24,13 +24,16 @@ for(folderName in folderNames){
 library(data.table)
 imgTrainDT <- data.table( matrix(0, ncol=1, nrow= number_of_features)  )
 
-
+t1 <- Sys.time()
 i <- 1 
 for(folderName in folderNames){
   imgDir <- paste0(rootDataDir, folderName, "/")
   i <- ncol(imgTrainDT)
   cat("done with:  ", i-1, "/",  numberOfImages, "  files\n")
-  cat("working with the folder: ", imgDir, "\n") 
+  print("estimated time to complete ")
+  print(round((Sys.time()-t1)/i * (numberOfImages-i), digits = 2) )
+  cat("working with the folder: ", imgDir, "\n")   
+  
   imgNames <- dir(imgDir)
   
   #for(imgName in imgNames){

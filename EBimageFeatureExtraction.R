@@ -46,34 +46,46 @@ RadialFeatures <- function(img, NumSplits=10){
   angle <- atan2(diference[,2], diference[, 1])*180/pi
   angle.m[ind.of.pixels] <-  angle
   
-  mass_by_angle_f <- function(a_split_number){
+  mass_by_angle_f <- function(a_split_number, match.radius.m){
+    
     a.splits <- seq(-180, 180, length.out=a_split_number)
     mass_by_angle <- c()    
     
     for(i in 2:length(a.splits)){
-      match.angle.m <- a.splits[i-1] < angle.m  & angle.m < a.splits[i] 
-      mass_by_angle <- c(mass_by_angle, 
-                         sum ( img[ which(match.angle.m, arr.ind =T)]  ) / totalIntencity )
+      #logic matrix of matching angles
+      match.angle.m <- a.splits[i-1] < angle.m  & angle.m < a.splits[i]
+      chosen.indexes.m <- which( as.logical( match.angle.m * match.radius.m, arr.ind =T) )
+      mass_by_angle <- c(mass_by_angle, sum ( img[chosen.indexes.m] ) / totalIntencity )
     }  
     
     featuresIm <- c(sd(mass_by_angle),
                     sd(mass_by_angle)/mean(mass_by_angle) )
     featuresIm    
   }
+
+  # angle features - no radius splitting
+  match.radius.m_gl <- radius.m
+  match.radius.m_gl[, ] <- T
   
-  featuresIm <- c(featuresIm, mass_by_angle_f(10) )
-  featuresIm <- c(featuresIm, mass_by_angle_f(20) )
-  featuresIm <- c(featuresIm, mass_by_angle_f(40) )
+  featuresIm <- c(featuresIm, mass_by_angle_f(10, match.radius.m_gl) )
+  featuresIm <- c(featuresIm, mass_by_angle_f(20, match.radius.m_gl) )
+  featuresIm <- c(featuresIm, mass_by_angle_f(40, match.radius.m_gl) )
   
   #find ratio of mass within certain radius interval 
   r.splits <- seq(0, max(radius), length.out = NumSplits)
   
+  r_sd <- c() 
   for(i in 2:length(r.splits)){
     match.radius.m <- r.splits[i-1] < radius.m  & radius.m < r.splits[i] 
-    featuresIm <- c(featuresIm, 
-                    sum ( img[ which(match.radius.m, arr.ind =T)]  ) / totalIntencity )
+    r_m <- sum ( img[ which(match.radius.m, arr.ind =T)]  ) / totalIntencity 
+    featuresIm <- c(featuresIm, r_m )
+    r_sd <- c(r_sd, r_m) 
+    
+    # angle features for each radius
+    featuresIm <- c(featuresIm, mass_by_angle_f(20, match.radius.m) )
   }  
-  
+  featuresIm <- c(featuresIm, sd(r_sd), sd(r_sd)/mean(r_sd) )
+
   featuresIm
 }
 
@@ -93,7 +105,7 @@ largest_connected <- function(img_bin, Splits=10){
 
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, 2*Splits))
+  #featuresIm <- c(featuresIm, RadialFeatures(img_bin_sub, 2*Splits))
   
   
   featuresIm
@@ -112,7 +124,7 @@ getFeatures <- function(imgIn, Splits=10){
   
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img, Splits*2))
+  #featuresIm <- c(featuresIm, RadialFeatures(img, Splits*2))
   ####################################
   ############################### COnvert to binary all non zero
   img_bin <- img > 0
@@ -121,7 +133,7 @@ getFeatures <- function(imgIn, Splits=10){
 
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  #featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
   
   ###############################
   ############################### COnvert to binary by otsu 
@@ -131,7 +143,7 @@ getFeatures <- function(imgIn, Splits=10){
   featuresIm <- c(featuresIm, largest_connected(img_bin, Splits))
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  #featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
     
   ######################################
   ###features for filled Image
@@ -141,7 +153,7 @@ getFeatures <- function(imgIn, Splits=10){
   
   #Radial features
   featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits))
-  featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
+  #featuresIm <- c(featuresIm, RadialFeatures(img_bin, Splits*2))
   
   ##############
   featuresIm
