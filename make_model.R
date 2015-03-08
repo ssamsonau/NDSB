@@ -2,7 +2,7 @@ t1 <- Sys.time()
 # load prepared data
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("239features.csv")
+imgTrainDT <- fread("316features.csv")
 setnames(imgTrainDT, 1, "path")
 
 #imgTrainDTturn <- fread("turned")
@@ -20,7 +20,7 @@ imgTrainDT[, eval(nzv):=NULL]
 ###infinite to NA and the impute
 imgTrainDT[, names(imgTrainDT):=lapply(.SD, function(x){replace(x, is.infinite(x), NA)}), 
            .SDcols=1:ncol(imgTrainDT)]
-knn_imp <-  preProcess(imgTrainDT, method = "knnImpute", k=10)
+knn_imp <-  preProcess(imgTrainDT, method = "knnImpute", k=5)
 imgTrainDT <- data.table(predict(knn_imp, imgTrainDT))
 
 ###form outcome coloumn
@@ -113,7 +113,7 @@ b_mtry <- fit_one_model_caret(1)
 
 
 #to train many models
-#fit_models(2, 100)
+fit_models(2, 100)
 
 t2 <- Sys.time()
 print(t2-t1)

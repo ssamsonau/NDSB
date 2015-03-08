@@ -12,7 +12,6 @@ source("EBimageFeatureExtraction.R")
 img <- 1- readJPEG("sample.jpg")
 number_of_features <- length(getFeatures(img, Splits = radial_splits))
 
-
 numberOfImages <- length(dir(rootDataDir))
 
 # Data Table will be filled by columns - this is significantly faster (vs by rows). 
