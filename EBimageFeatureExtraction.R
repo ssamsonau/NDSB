@@ -69,7 +69,8 @@ RadialFeatures <- function(img, NumSplits=10){
   # angle features - no radius splitting
   match.radius.m_gl <- matrix(NA, nrow=nrow(img), ncol=ncol(img) ) 
   match.radius.m_gl[ind.of.pixels] <- T
-  
+
+  featuresIm <- c(featuresIm, mass_by_angle_f(5, match.radius.m_gl) )
   featuresIm <- c(featuresIm, mass_by_angle_f(10, match.radius.m_gl) )
   featuresIm <- c(featuresIm, mass_by_angle_f(20, match.radius.m_gl) )
   featuresIm <- c(featuresIm, mass_by_angle_f(40, match.radius.m_gl) )
@@ -85,7 +86,7 @@ RadialFeatures <- function(img, NumSplits=10){
     r_sd <- c(r_sd, r_m) 
     
     # angle features for each radius
-    featuresIm <- c(featuresIm, mass_by_angle_f(20, match.radius.m) )
+    #featuresIm <- c(featuresIm, mass_by_angle_f(20, match.radius.m) )
   }  
   featuresIm <- c(featuresIm, sd(r_sd) ) 
   
