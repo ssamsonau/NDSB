@@ -52,22 +52,25 @@ RadialFeatures <- function(img, NumSplits=10){
   moments <- computeFeatures.moment(img>0)[1, ]
   if(! is.null(moments) ){  # sometimes programm can not find moments... then moments is NULL
     angle <- angle - moments["m.theta"]*180/pi
-    ifelse(angle>180, angle-360, angle)
-    ifelse(angle<-180, angle+360, angle)
+    angle[which(angle > 180, arr.ind=T)] <- angle[which(angle > 180, arr.ind=T)] - 360
+    angle[which( angle < -180, arr.ind=T)] <- angle[which( angle < -180, arr.ind=T)] + 360
   }
   
   angle.m[ind.of.pixels] <-  angle
   
-  mass_by_angle_f <- function(a_split_number, match.radius.m){
+  #mass_by_angle_f <- function(a_split_number, match.radius.m){
+  mass_by_angle_f <- function(a_split_number){
+      
     mass_by_angle <- c()    
-    
     a.splits <- seq(-180, 180, length.out=a_split_number)
         
     for(i in 2:length(a.splits)){
       #logic matrix of matching angles
       match.angle.m <- a.splits[i-1] <= angle.m  & angle.m < a.splits[i]
-      chosen.indexes.m <- which( match.angle.m * match.radius.m == 1, arr.ind=T )
-      sum_for_rad <- sum(img[ which( match.radius.m==1, arr.ind =T ) ])
+      #chosen.indexes.m <- which( match.angle.m * match.radius.m == 1, arr.ind=T )
+      chosen.indexes.m <- which( match.angle.m == 1, arr.ind=T )
+      #sum_for_rad <- sum(img[ which( match.radius.m==1, arr.ind =T ) ])
+      sum_for_rad <- totalIntencity
       
       sum_at_chosen_a <- sum ( img[chosen.indexes.m] ) / 
         ifelse(sum_for_rad, sum_for_rad, 1)#remove division by 0
@@ -80,14 +83,17 @@ RadialFeatures <- function(img, NumSplits=10){
   }
 
   # angle features - no radius splitting
-  match.radius.m_gl <- matrix(NA, nrow=nrow(img), ncol=ncol(img) ) 
-  match.radius.m_gl[ind.of.pixels] <- T
+  #match.radius.m_gl <- matrix(NA, nrow=nrow(img), ncol=ncol(img) ) 
+  #match.radius.m_gl[ind.of.pixels] <- T
 
   #featuresIm <- c(featuresIm, mass_by_angle_f(2, match.radius.m_gl) )
-  featuresIm <- c(featuresIm, mass_by_angle_f(4, match.radius.m_gl) )
-  featuresIm <- c(featuresIm, mass_by_angle_f(20, match.radius.m_gl) )
+  #featuresIm <- c(featuresIm, mass_by_angle_f(4, match.radius.m_gl) )
+  #featuresIm <- c(featuresIm, mass_by_angle_f(20, match.radius.m_gl) )
   #featuresIm <- c(featuresIm, mass_by_angle_f(40, match.radius.m_gl) )
   
+  featuresIm <- c(featuresIm, mass_by_angle_f(4) )
+  featuresIm <- c(featuresIm, mass_by_angle_f(20) )
+    
   #find ratio of mass within certain radius interval 
   r.splits <- seq(0, max(radius), length.out = NumSplits)
   

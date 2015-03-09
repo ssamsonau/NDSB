@@ -11,10 +11,10 @@ fit.all <- Fit$finalModel
 rm(Fit)
 
 library(randomForest)
-for(name in models_names[2:100]){
-  print(paste0("working with", name))
+for(name in models_names[2:50]){
+  print(paste0("working with ", name))
   load(paste0(dir_models, name))
-  fit.all <- combine(fit.all, Fit$finalModel)
+  fit.all <- combine(fit.all, Fit)
   rm(Fit)
 }
 #save(fit.all, file=paste0(dir_root, "fit_all_1.Rdata") )
@@ -25,12 +25,12 @@ print(fit.all)
 
 #load train And test data
 library(data.table)
-#imgTrainDT <- fread("41features.csv")
-#setnames(imgTrainDT, 1, "path")
-#pathCol <- imgTrainDT$path
-#imgTrainDT[, path:=NULL]
+imgTrainDT <- fread("316features.csv")
+setnames(imgTrainDT, 1, "path")
+pathCol <- imgTrainDT$path
+imgTrainDT[, path:=NULL]
 
-imgTestDT <- fread("166featuresTest.csv")
+imgTestDT <- fread("316featuresTest.csv")
 setnames(imgTestDT, 1, "filename")
 fileNameCol <- imgTestDT$filename
 imgTestDT[, filename:=NULL]
@@ -41,6 +41,16 @@ imgTestDT[, filename:=NULL]
 library(caret)
 #c_s_trans <- preProcess(imgTrainDT, method  = c("center", "scale"))
 #imgTestDT <- data.table( predict(c_s_trans, imgTestDT) )
+
+nzv <- nearZeroVar(imgTrainDT)
+imgTestDT[, eval(nzv):=NULL]
+
+###infinite to NA and the impute
+imgTestDT[, names(imgTestDT):=lapply(.SD, function(x){replace(x, is.infinite(x), NA)}), 
+           .SDcols=1:ncol(imgTestDT)]
+knn_imp <-  preProcess(imgTestDT, method = "knnImpute", k=5)
+imgTestDT <- data.table(predict(knn_imp, imgTestDT))
+
 
 #make prediction of output
 #--------------
