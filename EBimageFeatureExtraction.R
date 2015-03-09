@@ -1,5 +1,8 @@
 #source("http://bioconductor.org/biocLite.R")
 #biocLite("EBImage")
+# Set MKL threads for Revolution R Open
+if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
+#
 binImStatBasic <- function(img_bin){
   Moments <- computeFeatures.moment(img_bin)[1, c("m.majoraxis","m.eccentricity")]
   Eccent <- Moments["m.eccentricity"]

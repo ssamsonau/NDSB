@@ -4,6 +4,9 @@ folderNames <- dir(rootDataDir)
 radial_splits = 10
 #size_im <- 30
 ################################
+# Set MKL threads for Revolution R Open
+if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
+#
 library(jpeg)
 library(EBImage)
 source("EBimageFeatureExtraction.R")

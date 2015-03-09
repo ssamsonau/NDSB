@@ -1,3 +1,6 @@
+# Set MKL threads for Revolution R Open
+if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
+#
 
 dir_root = "E:/Temp/forest/"
 dir_models=paste0(dir_root, "separate/")

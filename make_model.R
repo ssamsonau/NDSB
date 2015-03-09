@@ -1,5 +1,7 @@
 t1 <- Sys.time()
 # load prepared data
+# Set MKL threads for Revolution R Open
+if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
 #-------------------------------------------------
 library(data.table)
 imgTrainDT <- fread("316features.csv")
