@@ -25,6 +25,26 @@ imgTrainDT[, names(imgTrainDT):=lapply(.SD, function(x){replace(x, is.infinite(x
 knn_imp <-  preProcess(imgTrainDT, method = "knnImpute", k=5)
 imgTrainDT <- data.table(predict(knn_imp, imgTrainDT))
 
+#### remove correlated
+cor_mat <- cor(imgTrainDT)
+highly_cor <- findCorrelation(cor_mat, cutoff = .99)
+imgTrainDT[,eval(highly_cor):=NULL]
+
+######scale from 0 to 1
+prep_range <-  preProcess(imgTrainDT, method = "range")
+imgTrainDT <- data.table(predict(prep_range, imgTrainDT))
+
+######unskew data
+source("unskew_data.R")
+
+######scale from 0 to 1
+prep_range_2 <-  preProcess(imgTrainDT, method = "range")
+imgTrainDT <- data.table(predict(prep_range_2, imgTrainDT))
+
+#####PCA
+#prep_pca <-  preProcess(imgTrainDT, method = "pca", t=0.95)
+#imgTrainDT <- data.table(predict(prep_pca, imgTrainDT))
+
 ###form outcome coloumn
 imgTrainDT[, .outcome:= sapply( strsplit( pathCol, "&"), "[", 1) ]
 imgTrainDT[grep("shrimp-like_other", .outcome), .outcome:="shrimp_like_other"]
@@ -75,6 +95,7 @@ fit_one_model_caret <- function(i){
   )
   stopCluster(cl)
   save(Fit, file=paste0(dir_models, "rf_fit_caret_",i, ".Rdata") ) 
+  print(Fit)
   return(Fit$bestTune$mtry)
 }
 
@@ -115,7 +136,7 @@ b_mtry <- fit_one_model_caret(1)
 
 
 #to train many models
-fit_models(2, 100)
+#fit_models(2, 100)
 
 t2 <- Sys.time()
 print(t2-t1)
