@@ -10,16 +10,32 @@ dir_models=paste0(dir_root, "separate/")
 models_names <- dir(dir_models)
 
 load(paste0(dir_models, models_names[1]))
-fit.all <- Fit$finalModel
+Fit_caret <- Fit$finalModel
 rm(Fit)
 
-library(randomForest)
-for(name in models_names[2:100]){
-  print(paste0("working with ", name))
-  load(paste0(dir_models, name))
-  fit.all <- combine(fit.all, Fit)
-  rm(Fit)
+if(dom==T){
+  #parallel in Unix
+  require('doMC');  registerDoMC(8)  
+}else{
+  #parallel in Windows
+  library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
 }
+
+
+library(foreach); library(randomForest)
+
+#for(name in models_names[2:100]){
+#  print(paste0("working with ", name))
+#  load(paste0(dir_models, name))
+#  fit.all <- combine(fit.all, Fit)
+#  rm(Fit)
+#}
+Fit_rf_combined <- foreach(name=names[2:100], .combine=combine, .packages='randomForest') %dopar% {
+  load(paste0(dir_models, name))
+  Fit
+}
+
+Fit_rf_combined < combine(Fit_caret, Fit_rf_combined)
 
 print(fit.all)
 
