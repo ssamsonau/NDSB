@@ -1,4 +1,4 @@
-packages.to.load <- c("data.table", "caret")
+packages.to.load <- c("data.table", "caret","randomForest")
 
 for(p in packages.to.load){
   if(! p %in% installed.packages()){
@@ -8,5 +8,5 @@ for(p in packages.to.load){
 
 ############################################
 
-source("make_model.R")
+source("predict.R")
 

@@ -4,49 +4,35 @@ t1 <- Sys.time()
 if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
 #-------------------------------------------------
 library(data.table)
-imgTrainDT <- fread("316features.csv")
-setnames(imgTrainDT, 1, "path")
+dir_root = "E:/Temp/forest/"
+#imgTrainDT <- fread(paste0(dir_root, "data/316features_imp.csv"))
+imgTrainDT <- fread(paste0(dir_root, "data/316features_imp_joined_V.csv"))
+
 
 #imgTrainDTturn <- fread("turned")
 #setnames(imgTrainDTturn, 1, "path")
 #setnames(imgTrainDTturn, 2:ncol(imgTrainDTturn), 
 #         paste0("t", names(imgTrainDTturn)[2:ncol(imgTrainDTturn)])   )
 #imgTrainDT <- merge(imgTrainDT, imgTrainDTturn, by="path")
-pathCol <- imgTrainDT$path
-imgTrainDT[, path:=NULL]
+outCol <- imgTrainDT$.outcome
+imgTrainDT[, .outcome:=NULL]
+imgTrainDT[, .filename:=NULL]
 
 library(caret)
 nzv <- nearZeroVar(imgTrainDT)
 imgTrainDT[, eval(nzv):=NULL]
 
-###infinite to NA and the impute
-imgTrainDT[, names(imgTrainDT):=lapply(.SD, function(x){replace(x, is.infinite(x), NA)}), 
-           .SDcols=1:ncol(imgTrainDT)]
-knn_imp <-  preProcess(imgTrainDT, method = "knnImpute", k=5)
-imgTrainDT <- data.table(predict(knn_imp, imgTrainDT))
-
 #### remove correlated
 cor_mat <- cor(imgTrainDT)
-highly_cor <- findCorrelation(cor_mat, cutoff = .99)
+highly_cor <- findCorrelation(cor_mat, cutoff = .9)
 imgTrainDT[,eval(highly_cor):=NULL]
 
-######scale from 0 to 1
-prep_range <-  preProcess(imgTrainDT, method = "range")
-imgTrainDT <- data.table(predict(prep_range, imgTrainDT))
-
-######unskew data
-source("unskew_data.R")
-
-######scale from 0 to 1
-prep_range_2 <-  preProcess(imgTrainDT, method = "range")
-imgTrainDT <- data.table(predict(prep_range_2, imgTrainDT))
-
 #####PCA
-#prep_pca <-  preProcess(imgTrainDT, method = "pca", t=0.95)
+#prep_pca <-  preProcess(imgTrainDT, method = "pca", t=0.99)
 #imgTrainDT <- data.table(predict(prep_pca, imgTrainDT))
 
 ###form outcome coloumn
-imgTrainDT[, .outcome:= sapply( strsplit( pathCol, "&"), "[", 1) ]
+imgTrainDT[, .outcome:= outCol ]
 imgTrainDT[grep("shrimp-like_other", .outcome), .outcome:="shrimp_like_other"]
 imgTrainDT[, .outcome:=factor(.outcome)]
 
@@ -62,7 +48,6 @@ set.seed(3456)
 
 #source("mcLogLoss_metrics.R")
 
-dir_root = "E:/Temp/forest/"
 dir_models=paste0(dir_root, "separate/")
 
 weights_v <- imgTrainDT[, rep(nrow(imgTrainDT)/.N, .N), by=.outcome]$V1

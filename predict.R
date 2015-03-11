@@ -1,8 +1,11 @@
 # Set MKL threads for Revolution R Open
 if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
 #
+dom <- F #calculated on domino?
 
-dir_root = "E:/Temp/forest/"
+if(dom==T) {dir_root = "./"
+}else {dir_root = "E:/Temp/forest/"}
+
 dir_models=paste0(dir_root, "separate/")
 models_names <- dir(dir_models)
 
@@ -11,47 +14,22 @@ fit.all <- Fit$finalModel
 rm(Fit)
 
 library(randomForest)
-for(name in models_names[2:50]){
+for(name in models_names[2:100]){
   print(paste0("working with ", name))
   load(paste0(dir_models, name))
   fit.all <- combine(fit.all, Fit)
   rm(Fit)
 }
-#save(fit.all, file=paste0(dir_root, "fit_all_1.Rdata") )
 
-#load models
-#load("model_rf_41features_distort.Rdata")
 print(fit.all)
 
-#load train And test data
 library(data.table)
-imgTrainDT <- fread("316features.csv")
-setnames(imgTrainDT, 1, "path")
-pathCol <- imgTrainDT$path
-imgTrainDT[, path:=NULL]
 
-imgTestDT <- fread("316featuresTest.csv")
-setnames(imgTestDT, 1, "filename")
-fileNameCol <- imgTestDT$filename
-imgTestDT[, filename:=NULL]
+if(dom==T){ imgTestDT <- fread(unzip(paste0(dir_root, "data/316featuresTest_imp_joined_V.zip"))) 
+}else{imgTestDT <- fread(paste0(dir_root, "data/316featuresTest_imp_joined_V.csv"))}
 
-
-#preprocess with caret
-#--------------------------------------------------
-library(caret)
-#c_s_trans <- preProcess(imgTrainDT, method  = c("center", "scale"))
-#imgTestDT <- data.table( predict(c_s_trans, imgTestDT) )
-
-nzv <- nearZeroVar(imgTrainDT)
-imgTestDT[, eval(nzv):=NULL]
-
-###infinite to NA and the impute
-imgTestDT[, names(imgTestDT):=lapply(.SD, function(x){replace(x, is.infinite(x), NA)}), 
-           .SDcols=1:ncol(imgTestDT)]
-knn_imp <-  preProcess(imgTestDT, method = "knnImpute", k=5)
-imgTestDT <- data.table(predict(knn_imp, imgTestDT))
-
-
+filenameCol <- imgTestDT[, .filename]
+imgTestDT[, .filename:=NULL]
 #make prediction of output
 #--------------
 library(randomForest)
@@ -69,12 +47,13 @@ missing <- submissionVect[ ! submissionVect %in% names(resultsDT) ]
 
 resultsDT[, eval(missing):=0]
 
-resultsDT[, image:=fileNameCol]
+resultsDT[, image:=filenameCol]
 new_order <- match(submissionVect, names(resultsDT))
 setcolorder(resultsDT, new_order)
 
 write.csv(resultsDT, file="to_be_submitted.csv", quote=F, row.names=F )
 
-system2("C://cygwin64/bin/sed.exe", " -i 's/shrimp_like/shrimp-like/g' to_be_submitted.csv")
-
-system2("C://Program Files/7-Zip/7z.exe", "a -tzip to_be_submitted.zip to_be_submitted.csv")
+if(dom==F){
+  system2("C://cygwin64/bin/sed.exe", " -i 's/shrimp_like/shrimp-like/g' to_be_submitted.csv")  
+  system2("C://Program Files/7-Zip/7z.exe", "a -tzip to_be_submitted.zip to_be_submitted.csv")
+}

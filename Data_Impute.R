@@ -16,9 +16,10 @@ imgTrainDT[, names(imgTrainDT):=lapply(.SD, function(x){replace(x, is.infinite(x
 knn_imp <-  preProcess(imgTrainDT, method = "knnImpute", k=5)
 imgTrainDT <- data.table(predict(knn_imp, imgTrainDT))
 
-imgTrainDT[, .output:=sapply(strsplit(pathCol, "&"), "[", 1)]
+imgTrainDT[, .outcome:=sapply(strsplit(pathCol, "&"), "[", 1)]
+imgTrainDT[, .filename:=sapply(strsplit(pathCol, "&"), "[", 2)]
 
-write.csv(imgTrainDT, file=paste0(316, "features_imp.csv")  )
+write.csv(imgTrainDT, file=paste0(316, "features_imp.csv"), row.names = F )
 
 
 ################   test
@@ -35,5 +36,5 @@ imgTestDT[, names(imgTestDT):=lapply(.SD, function(x){replace(x, is.infinite(x),
 knn_imp <-  preProcess(imgTestDT, method = "knnImpute", k=5)
 imgTestDT <- data.table(predict(knn_imp, imgTestDT))
 
-imgTestDT[, filename:=fileNameCol]
-write.csv(imgTrainDT, file=paste0(316, "featuresTest_imp.csv")  )
+imgTestDT[, .filename:=fileNameCol]
+write.csv(imgTestDT, file=paste0(316, "featuresTest_imp.csv"), row.names = F  )
