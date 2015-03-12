@@ -24,12 +24,16 @@ imgTrainDT[, eval(nzv):=NULL]
 
 #### remove correlated
 cor_mat <- cor(imgTrainDT)
-highly_cor <- findCorrelation(cor_mat, cutoff = .9)
+highly_cor <- findCorrelation(cor_mat, cutoff = .95)
 imgTrainDT[,eval(highly_cor):=NULL]
 
 #####PCA
 #prep_pca <-  preProcess(imgTrainDT, method = "pca", t=0.99)
 #imgTrainDT <- data.table(predict(prep_pca, imgTrainDT))
+
+#prep_range <-  preProcess(imgTrainDT, method = "range")
+#imgTrainDT <- data.table(predict(prep_range, imgTrainDT))
+#save(prep_range, file="prep_range.Rdata")
 
 ###form outcome coloumn
 imgTrainDT[, .outcome:= outCol ]
@@ -58,7 +62,9 @@ weights_v <- imgTrainDT[, rep(nrow(imgTrainDT)/.N, .N), by=.outcome]$V1
 
 ###################################### fit one model  caret
 fit_one_model_caret <- function(i){
-  library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
+  #library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
+  library(doParallel);  cl <- makeCluster(1);  registerDoParallel(cl)
+  
   fitControl <- trainControl(method = "oob", verboseIter=T 
                              #,classProbs=T, summaryFunction = mcLogloss_metrics
   )
@@ -121,7 +127,7 @@ b_mtry <- fit_one_model_caret(1)
 
 
 #to train many models
-#fit_models(2, 100)
+fit_models(2, 100)
 
 t2 <- Sys.time()
 print(t2-t1)
@@ -129,6 +135,9 @@ print(t2-t1)
 load(file=paste0(dir_models, "rf_fit_caret_",1, ".Rdata") )
 sink("log.txt"); 
 print(Fit); 
+png(filename="m_plot.png")
+library(randomForest); plot(Fit$finalModel)
+dev.off()
 #CM <- confusionMatrix(predict(rf.all, imgTrainDT), imgTrainDT$.outcome)
 #print(CM$byClass)
 print(t2-t1); 
