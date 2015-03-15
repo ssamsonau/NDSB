@@ -18,6 +18,8 @@ outCol <- imgTrainDT$.outcome
 imgTrainDT[, .outcome:=NULL]
 imgTrainDT[, .filename:=NULL]
 
+#imgTrainDT <- imgTrainDT[sample(1:nrow(imgTrainDT), 1000), ]
+
 library(caret)
 nzv <- nearZeroVar(imgTrainDT)
 imgTrainDT[, eval(nzv):=NULL]
@@ -62,8 +64,8 @@ weights_v <- imgTrainDT[, rep(nrow(imgTrainDT)/.N, .N), by=.outcome]$V1
 
 ###################################### fit one model  caret
 fit_one_model_caret <- function(i){
-  #library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
-  library(doParallel);  cl <- makeCluster(1);  registerDoParallel(cl)
+  library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
+  #library(doParallel);  cl <- makeCluster(1);  registerDoParallel(cl)
   
   fitControl <- trainControl(method = "oob", verboseIter=T 
                              #,classProbs=T, summaryFunction = mcLogloss_metrics
@@ -87,11 +89,11 @@ fit_one_model_caret <- function(i){
   stopCluster(cl)
   save(Fit, file=paste0(dir_models, "rf_fit_caret_",i, ".Rdata") ) 
   print(Fit)
-  return(Fit$bestTune$mtry)
+  return(Fit)
 }
 
 ###################################### fit one model rf
-fit_one_model_rf <- function(i){
+fit_one_model_rf <- function(i, rf_class_wt){
   library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl); 
   library(foreach); library(randomForest)
   x <- imgTrainDT[, .SD, .SDcols=grep(".outcome", names(imgTrainDT), invert=T)]
@@ -100,12 +102,24 @@ fit_one_model_rf <- function(i){
   
   Fit <- foreach(ntree=rep(n_trees/detectCores(), detectCores()), .combine=combine, 
                  .packages='randomForest') %dopar% {
-                  randomForest(x=x, y=y, ntree=ntree, mtry=b_mtry)                    
+                  randomForest(x=x, y=y, ntree=ntree, mtry=b_mtry, 
+                              classwt=rf_class_wt)                    
                 }
   
   stopCluster(cl)
   #print(Fit$ntree)
-  save(Fit, file=paste0(dir_models, "rf_fit_rf_",i, ".Rdata") )  
+  save(Fit, file=paste0(dir_models, "rf_fit_rf_",i, ".Rdata") )
+
+  imgTrainDT[, pred:=Fit$predicted]
+  error_rate <- imgTrainDT[, sum(.outcome!=pred)/.N, by=.outcome]
+  setkey(error_rate, .outcome)
+  imgTrainDT[, pred:=NULL]
+  
+  rf_class_wt <- error_rate[, V1]
+  names(rf_class_wt) <- error_rate[, .outcome]
+  #weights_v <- rep(error_rate, class_frequency)
+  #rf_class_wt <- error_rate
+  rf_class_wt
 }
 
 #################################  Fit several models
@@ -113,21 +127,35 @@ fit_models <- function(start_number=1, number_of_models=1){
   i<- start_number
   while(i <= number_of_models){
     print(paste0("fitting model N ", i))  
-    fit_one_model_rf(i)  
+    temp_rf_class_wt <<- fit_one_model_rf(i, rf_class_wt)  
+    print(paste0("change in rf_class_wt: ", 
+                 sqrt( sum( (temp_rf_class_wt - rf_class_wt)^2) ) ))
+    rf_class_wt <<- temp_rf_class_wt
     i <- i+1  
   }
 }
+
 
 ######################## apply 
 #number of trees per file
 n_trees = 100 # should be divisible by number of cpu for efficient foreach
 #to find best mtry using out of bag error
-b_mtry <- fit_one_model_caret(1)
+Fit <- fit_one_model_caret(1)
+b_mtry <- Fit$bestTune$mtry
 #b_mtry = 166
 
+Fit <- Fit$finalModel
+imgTrainDT[, pred:=Fit$predicted]
+error_rate <- imgTrainDT[, sum(.outcome!=pred)/.N, by=.outcome]
+setkey(error_rate, .outcome)
+imgTrainDT[, pred:=NULL]
+rf_class_wt <- error_rate[, V1]
+names(rf_class_wt) <- error_rate[, .outcome]
+#rf_class_wt <- rep(1, 121)
 
-#to train many models
+#################################to train many models
 fit_models(2, 100)
+save(rf_class_wt, file="rf_class_wt.Rdata")
 
 t2 <- Sys.time()
 print(t2-t1)
