@@ -56,14 +56,19 @@ dir_models=paste0(dir_root, "separate/")
 
 weights_v <- imgTrainDT[, rep(nrow(imgTrainDT)/.N, .N), by=.outcome]$V1
 
+for_weight <- imgTrainDT[, nrow(imgTrainDT)/.N, by=.outcome]
+setkey(for_weight, .outcome)
+rf_weights_v <- for_weight[, V1]
+names(rf_weights_v) <- for_weight[, .outcome]
+
 #class_frequency <- imgTrainDT[, .N, by=.outcome]$N
 #sample_size <- class_frequency
 #sample_size[class_frequency > 10*min(class_frequency)] <- 10*min(class_frequency) -1
 
 ###################################### fit one model  caret
 fit_one_model_caret <- function(i){
-  #library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
-  library(doParallel);  cl <- makeCluster(1);  registerDoParallel(cl)
+  library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
+  #library(doParallel);  cl <- makeCluster(1);  registerDoParallel(cl)
   
   fitControl <- trainControl(method = "oob", verboseIter=T 
                              #,classProbs=T, summaryFunction = mcLogloss_metrics
@@ -97,10 +102,12 @@ fit_one_model_rf <- function(i){
   x <- imgTrainDT[, .SD, .SDcols=grep(".outcome", names(imgTrainDT), invert=T)]
   y <- imgTrainDT[, .outcome]
   b_mtry <- b_mtry
+  rf_weights_v <- rf_weights_v
   
   Fit <- foreach(ntree=rep(n_trees/detectCores(), detectCores()), .combine=combine, 
                  .packages='randomForest') %dopar% {
-                  randomForest(x=x, y=y, ntree=ntree, mtry=b_mtry)                    
+                  randomForest(x=x, y=y, ntree=ntree, mtry=b_mtry, 
+                               classwt = rf_weights_v)                    
                 }
   
   stopCluster(cl)
@@ -142,3 +149,4 @@ dev.off()
 #print(CM$byClass)
 print(t2-t1); 
 sink()
+ 
