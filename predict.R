@@ -3,12 +3,12 @@ if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
 
 library(data.table)
 #
-dom <- T #calculated on domino?
+dom <- T #calculation on domino?
 
 if(dom==T) {dir_root = "./"
 }else {dir_root = "E:/Temp/forest/"}
 
-dir_models=paste0(dir_root, "separate/")
+dir_models=paste0(dir_root, "separate_316_comb_V_cor95_weights/")
 models_names <- dir(dir_models)
 
 ############ Load first model, obtained by caret
@@ -35,7 +35,7 @@ models_names_dt[, sep:= 1:num_of_workers]
 library(foreach); library(randomForest)
 
 Fit_rf_combined <- foreach(k=1:num_of_workers, .combine=combine, .packages='randomForest') %dopar% {
- 
+  
   library(data.table)
   names <- models_names_dt[sep==k, models_names]
   load(paste0(dir_models, names[1]))
@@ -54,22 +54,22 @@ Fit_rf_combined <- combine(Fit_caret, Fit_rf_combined)
 
 print(Fit_rf_combined)
 
-if(dom==T){ imgTestDT <- fread(unzip(paste0(dir_root, "316featuresTest_imp.zip"))) 
-}else{imgTestDT <- fread(paste0(dir_root, "data/316featuresTest_imp.csv"))}
+if(dom==T){ imgTestDT <- fread(unzip(paste0(dir_root, "316featuresTest_imp_joined_V.zip"))) 
+}else{imgTestDT <- fread(paste0(dir_root, "data/316featuresTest_imp_joined_V.csv"))}
 
 filenameCol <- imgTestDT[, .filename]
 imgTestDT[, .filename:=NULL]
+
 #make prediction of output
 #--------------
 library(randomForest)
+
 predicted <- predict(Fit_rf_combined, newdata=imgTestDT, type="prob")
 
 #form a submission data table
 resultsDT <- data.table(predicted)
 
-#when I do subset of data, not all types are presented in prediction. Let us manyally 
-#add them to ouptut with prob of 0
-
+#make the same order of categories as in sampleSubmission
 submissionVect <- unlist( read.csv(unzip("sampleSubmission.csv.zip"), nrow=1, header=F) )
 submissionVect <- sub("-", "_", submissionVect)
 missing <- submissionVect[ ! submissionVect %in% names(resultsDT) ]

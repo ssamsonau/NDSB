@@ -1,4 +1,4 @@
-#source("http://bioconductor.org/biocLite.R")
+#source("http://bioconductor.org/biocLite.R") 
 #biocLite("EBImage")
 # Set MKL threads for Revolution R Open
 if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};

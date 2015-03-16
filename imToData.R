@@ -10,11 +10,8 @@ if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
 library(jpeg)
 library(EBImage)
 source("EBimageFeatureExtraction.R")
-#source("EBimageTurnImage.R")
 img <- 1- readJPEG("sample.jpg")
 number_of_features <- length(getFeatures(img, Splits = radial_splits))
-#number_of_features <- 46 +  radial_splits*4 + radial_splits*8
-#number_of_features <- size_im^2
 
 #count all files
 numberOfImages <- 0
@@ -49,12 +46,7 @@ for(folderName in folderNames){
     img <- readJPEG( paste0(imgDir, imgName) ) 
       
     ImFeatures <- getFeatures(img, Splits = radial_splits)
-    
-    #img_r <- turnImage(img = img, size_im = size_im)
-    
-    #imgTrainDT[ , paste0(folderName, "&", imgName):= c(c(img_r), ImFeatures)] 
     imgTrainDT_local[ , paste0(folderName, "&", imgName):= ImFeatures] 
-    #imgTrainDT[ , paste0(folderName, "&", imgName):= c(img_r)] 
     
     imgTrainDT_local[, V1:=NULL]
     imgTrainDT_local

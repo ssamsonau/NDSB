@@ -11,7 +11,6 @@ if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
 library(jpeg)
 library(EBImage)
 source("EBimageFeatureExtraction.R")
-#source("EBimageTurnImage.R")
 img <- 1- readJPEG("sample.jpg")
 number_of_features <- length(getFeatures(img, Splits = radial_splits))
 
@@ -25,7 +24,6 @@ imgTestDT <- data.table( matrix(0, ncol=1, nrow= number_of_features)  )
 
 library(EBImage)
 source("EBimageFeatureExtraction.R")
-#source("EBimageTurnImage.R")
 
 imgDir <- rootDataDir
 imgNamesDT <- data.table("imgN" = dir(imgDir))
@@ -52,9 +50,7 @@ for(grN in 0:max_gr){
     img <- readJPEG( paste0(imgDir, imgName) ) 
     
     ImFeatures <- getFeatures(img, Splits = radial_splits)
-    #img_r <- turnImage(img = img, sizeIm = sizeIm)
     
-    #imgTestDT[ , paste0(folderName, "&", imgName):= c(ImFeatures, img_r)] 
     imgTestDT_local[ , eval(imgName):= ImFeatures] 
     
     imgTestDT_local[, V1:=NULL]
@@ -74,6 +70,4 @@ imgTestDT <- t(imgTestDT)
 write.csv(imgTestDT, file=paste0(number_of_features, "featuresTest.csv")  )
 system2("C://Program Files/7-Zip/7z.exe", 
         paste0("a -tzip ", number_of_features, "featuresTest.zip ", 
-               number_of_features, "featuresTest.csv"))
-
-
+               number_of_features, "featuresTest.csv")) 

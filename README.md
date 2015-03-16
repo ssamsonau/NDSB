@@ -1,20 +1,30 @@
----
-title: "Readme"
-output: html_document
----
-These files can be run only once
+This code was written to participate in Kaggle [National Data Science Bowl](https://www.kaggle.com/c/datasciencebowl)  
+Features are extracted from images. Random Forest is used to make predictions 
 
-* resizeImages.R - resizes all images of train set to a fixed size. Does inversion.
+**Feature extraction:**
 
-* resizeImages_test.R - the same as above for test set
+* EBimageFeatureExtraction.R - extract various characteristics of the image. Usage of EBImage package. Distribution of mass by radius and angles.
 
-* imToData.R - reads images of train set to Matrix
+* imToData.R - script to perform feature extraction and to form csv file.
 
-* imToData_test.R - the same as above for the test set
+* imToData_test.R - the same for test data
 
-These files can be run many times for different models
+* join_with_Vadim_Data.R - join features with those obtained by a teammate
 
-* make_model.R - train model
+* balance_classes.R - file contains a function that can be used to under or over sample unbalanced classes
 
-* predict.R - use obtained from preivious step model for prediction
+**Make model**
 
+* make_model.R
+
+* mcLogLoss.R - calculates multiclass log loss if needed
+
+* mcLogLoss_metrics.R - use mcLogLoss.R with caret package
+
+**Predict**
+
+* predict.R - make prediction
+
+* dominoRunScript.R - run prediction file on domino lab 
+
+* correct_file_created_by_domino.R - corrects a submission file created by domino  

@@ -5,15 +5,8 @@ if(require(Revobase)) {library(doParallel); setMKLthreads(detectCores())};
 #-------------------------------------------------
 library(data.table)
 dir_root = "E:/Temp/forest/"
-#imgTrainDT <- fread(paste0(dir_root, "data/316features_imp.csv"))
 imgTrainDT <- fread(paste0(dir_root, "data/316features_imp_joined_V.csv"))
 
-
-#imgTrainDTturn <- fread("turned")
-#setnames(imgTrainDTturn, 1, "path")
-#setnames(imgTrainDTturn, 2:ncol(imgTrainDTturn), 
-#         paste0("t", names(imgTrainDTturn)[2:ncol(imgTrainDTturn)])   )
-#imgTrainDT <- merge(imgTrainDT, imgTrainDTturn, by="path")
 outCol <- imgTrainDT$.outcome
 imgTrainDT[, .outcome:=NULL]
 imgTrainDT[, .filename:=NULL]
@@ -61,20 +54,13 @@ setkey(for_weight, .outcome)
 rf_weights_v <- for_weight[, V1]
 names(rf_weights_v) <- for_weight[, .outcome]
 
-#class_frequency <- imgTrainDT[, .N, by=.outcome]$N
-#sample_size <- class_frequency
-#sample_size[class_frequency > 10*min(class_frequency)] <- 10*min(class_frequency) -1
-
 ###################################### fit one model  caret
 fit_one_model_caret <- function(i){
   library(doParallel);  cl <- makeCluster(detectCores());  registerDoParallel(cl)
-  #library(doParallel);  cl <- makeCluster(1);  registerDoParallel(cl)
   
   fitControl <- trainControl(method = "oob", verboseIter=T 
-                             #,classProbs=T, summaryFunction = mcLogloss_metrics
-  )
-  #Fit <- train(factor(.outcome) ~ ., data = imgTrainDT_kn[.outcome %in% 
-  #                                                 unique(imgTrainDT_kn$.outcome)[1:20]],
+                             #,classProbs=T, summaryFunction = mcLogloss_metrics  
+                             )
   Fit <- train(x=imgTrainDT[, .SD, .SDcols=grep(".outcome", names(imgTrainDT), invert=T)], 
                y=imgTrainDT[, .outcome], 
                data = imgTrainDT, method = "rf", 
@@ -82,11 +68,7 @@ fit_one_model_caret <- function(i){
                ntree=n_trees, 
                norm.votes=FALSE # to combine forests 
                ,metric="Kappa"
-               #,strata=imgTrainDT[, .outcome],
-               #,sampsize = sample_size   #rep(9, nlevels(imgTrainDT$.outcome) )
-                 
                ,tuneLength=detectCores()
-               #,tuneGrid=expand.grid(mtry=c(111) )
                ,trControl = fitControl
   )
   stopCluster(cl)
@@ -111,7 +93,6 @@ fit_one_model_rf <- function(i){
                 }
   
   stopCluster(cl)
-  #print(Fit$ntree)
   save(Fit, file=paste0(dir_models, "rf_fit_rf_",i, ".Rdata") )  
 }
 
@@ -131,7 +112,6 @@ n_trees = 100 # should be divisible by number of cpu for efficient foreach
 #to find best mtry using out of bag error
 b_mtry <- fit_one_model_caret(1)
 #b_mtry = 166
-
 
 #to train many models
 fit_models(2, 100)
